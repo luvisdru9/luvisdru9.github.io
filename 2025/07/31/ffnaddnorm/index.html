@@ -1,0 +1,248 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>关于FFN与Add &amp; Norm的一些学习与思考 | LUVISDRU9</title><meta name="author" content="luvisdru9"><meta name="copyright" content="luvisdru9"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#8ABEB9"><meta name="description" content="关于FFN与Add &amp; Norm的一些学习与思考">
+<meta property="og:type" content="article">
+<meta property="og:title" content="关于FFN与Add &amp; Norm的一些学习与思考">
+<meta property="og:url" content="https://luvisdru9.github.io/2025/07/31/ffnaddnorm/index.html">
+<meta property="og:site_name" content="LUVISDRU9">
+<meta property="og:description" content="关于FFN与Add &amp; Norm的一些学习与思考">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://luvisdru9.github.io/2025/07/31/ffnaddnorm/img_1.png">
+<meta property="article:published_time" content="2025-07-30T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-07-30T16:00:00.000Z">
+<meta property="article:author" content="luvisdru9">
+<meta property="article:tag" content="DL">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="ML">
+<meta property="article:tag" content="NLP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://luvisdru9.github.io/2025/07/31/ffnaddnorm/img_1.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "关于FFN与Add & Norm的一些学习与思考",
+  "url": "https://luvisdru9.github.io/2025/07/31/ffnaddnorm/",
+  "image": "https://luvisdru9.github.io/2025/07/31/ffnaddnorm/img_1.png",
+  "datePublished": "2025-07-30T16:00:00.000Z",
+  "dateModified": "2025-07-30T16:00:00.000Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "luvisdru9",
+      "url": "https://luvisdru9.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/aislogo.png"><link rel="canonical" href="https://luvisdru9.github.io/2025/07/31/ffnaddnorm/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#8ABEB9')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '关于FFN与Add & Norm的一些学习与思考',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 8.1.1"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/2025/07/31/ffnaddnorm/img_1.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">LUVISDRU9</span></a><a class="nav-page-title" href="/"><span class="site-name">关于FFN与Add &amp; Norm的一些学习与思考</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">关于FFN与Add &amp; Norm的一些学习与思考</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-07-30T16:00:00.000Z" title="发表于 2025-07-31 00:00:00">2025-07-31</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-07-30T16:00:00.000Z" title="更新于 2025-07-31 00:00:00">2025-07-31</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/NLP/">NLP</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="FFN（Feed-forward-Network）"><a href="#FFN（Feed-forward-Network）" class="headerlink" title="FFN（Feed-forward Network）"></a>FFN（Feed-forward Network）</h2><p>Transformer中的FFN实际上就是由线性层fc+relu激活函数+线性层fc的结构组成，论文中作者提出，attention输出的embedding维度为512，ffn将输入从512升维至2048，而后经过激活后又降维至512。</p>
+<div align=center>
+	<img src="img.png"/>
+</div>
+
+<p>个人理解，FFN的引入主要有四个作用：</p>
+<h3 id="语义强化"><a href="#语义强化" class="headerlink" title="语义强化"></a>语义强化</h3><p>每个神经元可以视作一个简单的分类器，用以近似输入数据的高维映射 通过升维，原始的输入被扩展到了高维度空间，能够学习到更丰富的信息与特征，而后又进行降维，将学习到的信息重新进行压缩，提取更精确的表达。第一层中，每个神经元可以视作一个简单的分类器，用以近似输入数据的高维映射（从一维卷积的角度看，升维可以提取更多的特征）。由此可见，虽然输入输出维度没有变化，但是后者所蕴含的信息多于前者。</p>
+<br>
+
+<h3 id="增强表达"><a href="#增强表达" class="headerlink" title="增强表达"></a>增强表达</h3><p>通过relu的运算，为embedding引入了非线性信息，如果没有 FFN 层的存在，Transformer 模型可能会退化为简单的线性变换模型，从而失去捕捉复杂特征的能力。FFN层保证了模型能够保持其表达能力，有效捕捉到输入数据中的复杂特征。</p>
+<br>
+
+<h3 id="知识存储"><a href="#知识存储" class="headerlink" title="知识存储"></a>知识存储</h3><p>一个很有趣的类比方法，比如512-&gt;2048升维后，相当于在记忆仓库中有2048个潜在的知识槽位（类比一个巨大的哈希表），每个神经元具有多义性可能存储一组稀疏特征，经过relu稀疏激活后（大部分激活为0或者输出接近0），选择了关键的几个知识槽位，而后再使用线性层对这些选出的知识进行加权压缩。相当于fc1学习key，fc2学习value。</p>
+<br>
+
+<h3 id="增大参数量"><a href="#增大参数量" class="headerlink" title="增大参数量"></a>增大参数量</h3><p>大模型具有涌现现象，当模型规模（参数量、训练数据量、算力）达到一定阈值后，模型会突然表现出一些在小模型上完全没有、甚至无法预期的新能力，而这些能力不是通过线性外推规模就能得到的。这是一种非线性、阈值式的性能跃迁。引入FFN，能够避免参数稀疏问题，RNN、CNN这类结构都具有参数共享的机制，在这种大规模模型上反而成了问题。此外，不考虑embedding层，一个transformer架构的模型里，FFN和Attention参数占据了模型参数的绝大部分，基本上超过了 90%。其中FFN和Attention 参数量比例接近 2:1。</p>
+<br>
+<br>
+<br>
+
+<h2 id="Add-Norm"><a href="#Add-Norm" class="headerlink" title="Add &amp; Norm"></a>Add &amp; Norm</h2><p>在Transformer中，add &amp; Norm主要体现在$output &#x3D; Norm(x + MHA&#x2F;Masked-MHA(x))$、$output &#x3D; Norm(x + FFN(x))$这几个部分。</p>
+<h3 id="Add的作用"><a href="#Add的作用" class="headerlink" title="Add的作用"></a>Add的作用</h3><h4 id="缓解梯度爆炸-消失"><a href="#缓解梯度爆炸-消失" class="headerlink" title="缓解梯度爆炸&#x2F;消失"></a>缓解梯度爆炸&#x2F;消失</h4><p>让梯度有一条直接从上层流到下层的通路，避免深层网络训练困难，这也是为什么大模型能够通过transformer堆叠从而实现大规模参数架构训练。</p>
+<h4 id="保留原始信息"><a href="#保留原始信息" class="headerlink" title="保留原始信息"></a>保留原始信息</h4><p>如果如果子层<code>MHA(x)</code>、<code>FFN(x)</code>训练不理想，可以继续依赖x进行训练，这里网络学习的是增量变化，而不是没有残差结构时的持续重建（这里很好的体现了残差的概念），子层也只需要学习对原信息的小幅度修正，结合原信息的传入两者相加便能得到很好的训练效果。</p>
+<br>
+
+<h3 id="Norm的作用"><a href="#Norm的作用" class="headerlink" title="Norm的作用"></a>Norm的作用</h3><h4 id="解决内部协变量偏移"><a href="#解决内部协变量偏移" class="headerlink" title="解决内部协变量偏移"></a>解决内部协变量偏移</h4><p>Internal Corvariate Shift，ICS是一个需要关注的问题，随着DNN的不断加深，随着参数的更新每一层的输出与其输入的分布都会产生差异，而随着层数的变大，这样的差异似乎也随着蝴蝶效应而变大。由于<code>P(Y|Xt)</code>与<code>P(Y|Xt-1)</code>相同，但是<code>P(Xt)</code>和<code>P(Xt-1)</code>却具有一定差异，这使得顶层网络需要不断去适应这样的变化，造成了模型的学习困难（记得曾经一开始学习时按照googlenet原论文手搭网络进行training，acc只有11%多，后面发现没有加bn… 加了若干bn之后就可以正常训练了）。</p>
+<p>ICS通常会导致以下几个问题：</p>
+<ul>
+<li>统计机器学习中的一个经典假设是源空间（source domain）和目标空间（target domain）的数据分布是一致的，而产生ICS后，输入不再为独立同分布，网络需要不断去适应分布的变化，导致训练时间增长，训练产生困难（相当于需要不断进行domain transfer，这显然是个麻烦的问题）；</li>
+<li>随着网络层数的增加，通过多层的计算后数据分布的多变不受控制，可能导致很多数据落入梯度饱和区，使得收敛速度变慢 。</li>
+</ul>
+<p>传统方法使用白化进行处理，处理后的数据具有特征之间相关性较低、所有特征具有相同的方差的特点，但是具有两个缺点：</p>
+<ol>
+<li>计算量大（pca）；</li>
+<li>强行消除特征之间的相关性，网络表征空间的学习被破坏。</li>
+</ol>
+<p>归一化即对某层的输入进行平移+伸缩变化，使其满足标准正态分布，这样在这一层的输入处，所有数据的输入分布得以稳定，满足了独立同分布的特性，也具有去除一些噪声的作用。</p>
+<br>
+<br>
+<br>
+
+<h2 id="归一化的分类（个人理解）"><a href="#归一化的分类（个人理解）" class="headerlink" title="归一化的分类（个人理解）"></a>归一化的分类（个人理解）</h2><p>一般而言，就会根据具体的任务使用不同的归一化方案，归一化方案的不同代表着我们要在哪一个维度进行归一化，也就代表着要把哪一个维度的信息损失掉一部分信息，从而进行相似化。</p>
+<h3 id="Instance-Normalization，IN"><a href="#Instance-Normalization，IN" class="headerlink" title="Instance Normalization，IN"></a>Instance Normalization，IN</h3><p>常用于风格迁移、图像生成任务，例如使用CycleGAN进行图像风格迁移就是使用的IN。我们都知道一张RGB图像由空间维度和通道维度组成（H * W * C），一般各个通道的分布代表了这张图像的“风格”，换句话说，也就是各个通道的均值与标准差代表了“风格”。那么对于各个通道进行归一化，即消除了这张图像的风格，保留了内容与框架，更容易进行其他风格的迁移。</p>
+<br>
+
+<h3 id="Batch-Normalizaition，BN"><a href="#Batch-Normalizaition，BN" class="headerlink" title="Batch Normalizaition，BN"></a>Batch Normalizaition，BN</h3><p>常用于通用的计算机视觉任务（识别、检测、分割、超分辨…）。与IN不一样的，IN不考虑B的原因则是为了抛弃其他图像风格带来的干扰。而BN将batch维度考虑了进来，类似于识别这类任务，需要捕捉整体的特征，因此对于每一个通道考虑(B,H,W)的信息进行归一化，相当于BN同样是在通道C维度进行归一化，却没有完全像IN那样完全去除一张图片的风格特征，而是在对batch中的图像风格进行平均化。</p>
+<br>
+
+<h3 id="Layer-Normalization，LN"><a href="#Layer-Normalization，LN" class="headerlink" title="Layer Normalization，LN"></a>Layer Normalization，LN</h3><p>常用于NLP任务。如果输入的为图片(B,C,H,W)，对于每一个样本在(C,H,W)上进行归一化，即对每个样本的所有特征进行归一化，完全不考虑其他样本。对于nlp任务而言，(batch_size, max_seq_len, vec_dim)和CV的(N,C,H,W)对应关系为：<code>max_seq_len ⇒ H*W、vec_dim ⇒ C</code>但是在CV中LayerNorm标准化(C,H,W)，而NLP中标准化(vec_dim,)，nlp中BN具有以下缺点：</p>
+<ul>
+<li>batch size一般较小，mini-batch情况下bn的全局统计信息不准确</li>
+<li>NLP中同一个batch不同句子的某个位置的特征没有可比性：句子1第3个token的语义和句子2第3个token的语义通常不同（词不同、上下文不同）</li>
+</ul>
+<h4 id="为什么只对vec-dim维度进行归一化呢？"><a href="#为什么只对vec-dim维度进行归一化呢？" class="headerlink" title="为什么只对vec_dim维度进行归一化呢？"></a>为什么只对vec_dim维度进行归一化呢？</h4><p>NLP中同一个batch的句子长度不一，不同句子长度差异导致padding，padding部分是无效数据。另外，也是因为同一个seq中，不同的token间存在强相关信息，<strong>不适合进行iid假设</strong>，会严重影响训练效果。</p>
+<h4 id="layernorm的必要性"><a href="#layernorm的必要性" class="headerlink" title="layernorm的必要性"></a>layernorm的必要性</h4><p>Transformer中token表示会不断叠加其他token信息（attetion），这个加权和受上下文token数量和特征值大小影响，不可控，高维向量中，每个维度的小波动可能在叠加后产生较大的整体偏移不同层的累积叠加容易让embedding“跑远”，导致分布不稳定。因此，在transformer这种embedding维度十分大的场景下，LN能够把尺度拉回稳定范围，防止向量漂移太远。</p>
+<br>
+
+<h3 id="Group-Normalization-GN"><a href="#Group-Normalization-GN" class="headerlink" title="Group Normalization, GN"></a>Group Normalization, GN</h3><p>是一种LN与IN折中方案，将通道C分为G组，每一组通道内进行归一化。在BN中统计的是整个batch中同一个通道的均值和方差，即跨样本统计。当batch很小时（尤其 batch&#x3D;1），统计量非常不稳定，所以BN必须依赖大batch才能保证稳定的统计量和训练效果。而GN不依赖batch，且保留了组间的一定差异，适合用于mini-batch情况下需要保留一定通道特征差异的情况。</p>
+<h4 id="为什么work"><a href="#为什么work" class="headerlink" title="为什么work?"></a>为什么work?</h4><p>每一层有很多的卷积核，这些核学习到的特征并不完全是独立的，某些特征具有相同的分布，因此可以被group，当然，在NN中这些分组的条件很难人为进行捕捉，不那么直观</p>
+<br>
+
+<h3 id="个人对于BN、IN、GN共同性的思考"><a href="#个人对于BN、IN、GN共同性的思考" class="headerlink" title="个人对于BN、IN、GN共同性的思考"></a>个人对于BN、IN、GN共同性的思考</h3><p>在CNN中，一个通道的所有特征图均由同一个卷积核产生，因为我们希望不同图像，图像不同位置用这个卷积核执行卷积以后的数据分布是稳定的，所以需要在<strong>各个通道维度</strong>执行归一化（通俗点说，对于一个通道而言，每一个像素P_{bi,hj,wk}都是由相同的卷积核卷积而成，这些像素在分布上可被近似为独立同分布，于是在这个通道维度上进行归一化能够在损失信息较小的情况下削弱ICS），当然，对于H*W是一定要进行归一化的，而对于batch的考虑以及通道分组的考虑就是另外引入的考虑了。</p>
+<br>
+
+<h3 id="RMS-Normalization（Root-Mean-Square-Layer-Normalization）"><a href="#RMS-Normalization（Root-Mean-Square-Layer-Normalization）" class="headerlink" title="RMS Normalization（Root Mean Square Layer Normalization）"></a>RMS Normalization（Root Mean Square Layer Normalization）</h3><p>目前很多LLM采用了RMS Normalization用来替代传统的LayerNorm函数。</p>
+<p>对于一个词向量进行LN时候，具有两个特性：</p>
+<ul>
+<li>平移不变性（Translation invariance）：对输入特征减去均值，实现均值为零，消除输入偏置；</li>
+<li>缩放不变性（Scale invariance）：对输入除以标准差，实现标准差为一，保证特征尺度一致。</li>
+</ul>
+<p>研究者发现，LN之所以work不是因为其平移不变性而是因为缩放不变性，因此RMSNorm去除了减去均值的平移步骤，只保留了对输入特征进行缩放的操作，使用平方均值对向量进行归一化，这样具有以下好处：</p>
+<ul>
+<li>省略去中心化计算和平移操作，在高维大批量数据中能节省不少计算时间</li>
+<li>在实际应用中，RMS Norm和LN效果差不多，但是计算效率增长，训练更快</li>
+</ul>
+<br>
+<br>
+<br>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/30580480776">https://zhuanlan.zhihu.com/p/30580480776</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/jins-note/p/11342565.html">https://www.cnblogs.com/jins-note/p/11342565.html</a></li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://luvisdru9.github.io">luvisdru9</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://luvisdru9.github.io/2025/07/31/ffnaddnorm/">https://luvisdru9.github.io/2025/07/31/ffnaddnorm/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://luvisdru9.github.io" target="_blank">LUVISDRU9</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/NLP/">NLP</a><a class="post-meta__tags" href="/tags/LLM/">LLM</a><a class="post-meta__tags" href="/tags/DL/">DL</a><a class="post-meta__tags" href="/tags/ML/">ML</a></div><div class="post-share"><div class="social-share" data-image="/2025/07/31/ffnaddnorm/img_1.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/08/04/prepostnorm/" title="Post-norm &amp; Pre-norm"><img class="cover" src="/2025/08/04/prepostnorm/img_5.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">Post-norm & Pre-norm</div></div><div class="info-2"><div class="info-item-1">Post-norm & Pre-norm</div></div></div></a><a class="pagination-related" href="/2025/07/29/llamacpp/" title="llama.cpp编译过程中的cmake版本问题"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">llama.cpp编译过程中的cmake版本问题</div></div><div class="info-2"><div class="info-item-1">llama.cpp编译过程中的cmake版本问题</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/07/01/Sbert/" title="Sentence Bert"><img class="cover" src="/2025/07/01/Sbert/img_7.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-01</div><div class="info-item-2">Sentence Bert</div></div><div class="info-2"><div class="info-item-1">Sentence Bert论文阅读笔记</div></div></div></a><a class="pagination-related" href="/2025/07/28/attention/" title="Self-attetion &amp; Cross-attetion"><img class="cover" src="/2025/07/28/attention/img_3.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-28</div><div class="info-item-2">Self-attetion &amp; Cross-attetion</div></div><div class="info-2"><div class="info-item-1">Self-attetion & Cross-attetion</div></div></div></a><a class="pagination-related" href="/2025/06/30/bert/" title="Bert"><img class="cover" src="/2025/06/30/bert/img_2.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-30</div><div class="info-item-2">Bert</div></div><div class="info-2"><div class="info-item-1">Bert论文阅读笔记</div></div></div></a><a class="pagination-related" href="/2025/07/09/gte/" title="文本嵌入模型-GTE"><img class="cover" src="/2025/07/09/gte/img_5.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-09</div><div class="info-item-2">文本嵌入模型-GTE</div></div><div class="info-2"><div class="info-item-1">GTE论文阅读笔记</div></div></div></a><a class="pagination-related" href="/2025/07/22/RetroMAEBGE/" title="RetroMAE &amp; BGE"><img class="cover" src="/2025/07/22/RetroMAEBGE/img_5.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-22</div><div class="info-item-2">RetroMAE &amp; BGE</div></div><div class="info-2"><div class="info-item-1">RetroMAE & BGE</div></div></div></a><a class="pagination-related" href="/2025/08/20/gpt1/" title="GPT-1技术报告阅读笔记"><img class="cover" src="/2025/08/20/gpt1/img_9.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-20</div><div class="info-item-2">GPT-1技术报告阅读笔记</div></div><div class="info-2"><div class="info-item-1">GPT-1技术报告阅读笔记</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avator.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">luvisdru9</div><div class="author-info-description">Do not go gentle into that good night.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">15</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">8</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/luvisdru9"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#FFN%EF%BC%88Feed-forward-Network%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">FFN（Feed-forward Network）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%AD%E4%B9%89%E5%BC%BA%E5%8C%96"><span class="toc-number">1.1.</span> <span class="toc-text">语义强化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A2%9E%E5%BC%BA%E8%A1%A8%E8%BE%BE"><span class="toc-number">1.2.</span> <span class="toc-text">增强表达</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9F%A5%E8%AF%86%E5%AD%98%E5%82%A8"><span class="toc-number">1.3.</span> <span class="toc-text">知识存储</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A2%9E%E5%A4%A7%E5%8F%82%E6%95%B0%E9%87%8F"><span class="toc-number">1.4.</span> <span class="toc-text">增大参数量</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Add-Norm"><span class="toc-number">2.</span> <span class="toc-text">Add &amp; Norm</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Add%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="toc-number">2.1.</span> <span class="toc-text">Add的作用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BC%93%E8%A7%A3%E6%A2%AF%E5%BA%A6%E7%88%86%E7%82%B8-%E6%B6%88%E5%A4%B1"><span class="toc-number">2.1.1.</span> <span class="toc-text">缓解梯度爆炸&#x2F;消失</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BF%9D%E7%95%99%E5%8E%9F%E5%A7%8B%E4%BF%A1%E6%81%AF"><span class="toc-number">2.1.2.</span> <span class="toc-text">保留原始信息</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Norm%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="toc-number">2.2.</span> <span class="toc-text">Norm的作用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E5%86%85%E9%83%A8%E5%8D%8F%E5%8F%98%E9%87%8F%E5%81%8F%E7%A7%BB"><span class="toc-number">2.2.1.</span> <span class="toc-text">解决内部协变量偏移</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BD%92%E4%B8%80%E5%8C%96%E7%9A%84%E5%88%86%E7%B1%BB%EF%BC%88%E4%B8%AA%E4%BA%BA%E7%90%86%E8%A7%A3%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">归一化的分类（个人理解）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Instance-Normalization%EF%BC%8CIN"><span class="toc-number">3.1.</span> <span class="toc-text">Instance Normalization，IN</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Batch-Normalizaition%EF%BC%8CBN"><span class="toc-number">3.2.</span> <span class="toc-text">Batch Normalizaition，BN</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Layer-Normalization%EF%BC%8CLN"><span class="toc-number">3.3.</span> <span class="toc-text">Layer Normalization，LN</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%AA%E5%AF%B9vec-dim%E7%BB%B4%E5%BA%A6%E8%BF%9B%E8%A1%8C%E5%BD%92%E4%B8%80%E5%8C%96%E5%91%A2%EF%BC%9F"><span class="toc-number">3.3.1.</span> <span class="toc-text">为什么只对vec_dim维度进行归一化呢？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#layernorm%E7%9A%84%E5%BF%85%E8%A6%81%E6%80%A7"><span class="toc-number">3.3.2.</span> <span class="toc-text">layernorm的必要性</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Group-Normalization-GN"><span class="toc-number">3.4.</span> <span class="toc-text">Group Normalization, GN</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88work"><span class="toc-number">3.4.1.</span> <span class="toc-text">为什么work?</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%AA%E4%BA%BA%E5%AF%B9%E4%BA%8EBN%E3%80%81IN%E3%80%81GN%E5%85%B1%E5%90%8C%E6%80%A7%E7%9A%84%E6%80%9D%E8%80%83"><span class="toc-number">3.5.</span> <span class="toc-text">个人对于BN、IN、GN共同性的思考</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#RMS-Normalization%EF%BC%88Root-Mean-Square-Layer-Normalization%EF%BC%89"><span class="toc-number">3.6.</span> <span class="toc-text">RMS Normalization（Root Mean Square Layer Normalization）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">4.</span> <span class="toc-text">参考资料</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/05/qwen2_5/" title="Qwen2.5技术报告阅读笔记"><img src="/2025/12/05/qwen2_5/img.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Qwen2.5技术报告阅读笔记"/></a><div class="content"><a class="title" href="/2025/12/05/qwen2_5/" title="Qwen2.5技术报告阅读笔记">Qwen2.5技术报告阅读笔记</a><time datetime="2025-12-05T02:26:27.941Z" title="发表于 2025-12-05 10:26:27">2025-12-05</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/02/qwen2/" title="Qwen2技术报告阅读笔记"><img src="/2025/12/02/qwen2/img_2.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Qwen2技术报告阅读笔记"/></a><div class="content"><a class="title" href="/2025/12/02/qwen2/" title="Qwen2技术报告阅读笔记">Qwen2技术报告阅读笔记</a><time datetime="2025-12-02T03:48:47.465Z" title="发表于 2025-12-02 11:48:47">2025-12-02</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/08/20/gpt1/" title="GPT-1技术报告阅读笔记"><img src="/2025/08/20/gpt1/img_9.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="GPT-1技术报告阅读笔记"/></a><div class="content"><a class="title" href="/2025/08/20/gpt1/" title="GPT-1技术报告阅读笔记">GPT-1技术报告阅读笔记</a><time datetime="2025-08-19T16:00:00.000Z" title="发表于 2025-08-20 00:00:00">2025-08-20</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/08/04/prepostnorm/" title="Post-norm &amp; Pre-norm"><img src="/2025/08/04/prepostnorm/img_5.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Post-norm &amp; Pre-norm"/></a><div class="content"><a class="title" href="/2025/08/04/prepostnorm/" title="Post-norm &amp; Pre-norm">Post-norm &amp; Pre-norm</a><time datetime="2025-08-03T16:00:00.000Z" title="发表于 2025-08-04 00:00:00">2025-08-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/31/ffnaddnorm/" title="关于FFN与Add &amp; Norm的一些学习与思考"><img src="/2025/07/31/ffnaddnorm/img_1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="关于FFN与Add &amp; Norm的一些学习与思考"/></a><div class="content"><a class="title" href="/2025/07/31/ffnaddnorm/" title="关于FFN与Add &amp; Norm的一些学习与思考">关于FFN与Add &amp; Norm的一些学习与思考</a><time datetime="2025-07-30T16:00:00.000Z" title="发表于 2025-07-31 00:00:00">2025-07-31</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 By luvisdru9</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.2</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.2"></script><script src="/js/main.js?v=5.5.2"></script><div class="js-pjax"></div><script async data-pjax src="/"></script></div></body></html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Qwen2.5技术报告阅读笔记 | LUVISDRU9</title><meta name="author" content="luvisdru9"><meta name="copyright" content="luvisdru9"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#8ABEB9"><meta name="description" content="Qwen2.5技术报告阅读笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Qwen2.5技术报告阅读笔记">
+<meta property="og:url" content="https://luvisdru9.github.io/2025/12/05/qwen2_5/index.html">
+<meta property="og:site_name" content="LUVISDRU9">
+<meta property="og:description" content="Qwen2.5技术报告阅读笔记">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://luvisdru9.github.io/2025/12/05/qwen2_5/img.png">
+<meta property="article:published_time" content="2025-12-05T02:26:27.941Z">
+<meta property="article:modified_time" content="2025-12-05T13:26:34.343Z">
+<meta property="article:author" content="luvisdru9">
+<meta property="article:tag" content="DL">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="ML">
+<meta property="article:tag" content="NLP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://luvisdru9.github.io/2025/12/05/qwen2_5/img.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Qwen2.5技术报告阅读笔记",
+  "url": "https://luvisdru9.github.io/2025/12/05/qwen2_5/",
+  "image": "https://luvisdru9.github.io/2025/12/05/qwen2_5/img.png",
+  "datePublished": "2025-12-05T02:26:27.941Z",
+  "dateModified": "2025-12-05T13:26:34.343Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "luvisdru9",
+      "url": "https://luvisdru9.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/aislogo.png"><link rel="canonical" href="https://luvisdru9.github.io/2025/12/05/qwen2_5/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#8ABEB9')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Qwen2.5技术报告阅读笔记',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 8.1.1"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/2025/12/05/qwen2_5/img.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">LUVISDRU9</span></a><a class="nav-page-title" href="/"><span class="site-name">Qwen2.5技术报告阅读笔记</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">Qwen2.5技术报告阅读笔记</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-12-05T02:26:27.941Z" title="发表于 2025-12-05 10:26:27">2025-12-05</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-05T13:26:34.343Z" title="更新于 2025-12-05 21:26:34">2025-12-05</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/NLP/">NLP</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><div align=center>
+	<img src="img.png"/>
+</div>
+
+<p>在 AGI 与 开源 LLM 快速发展的时代，Qwen Team推出了Qwen的2.5版本，具备<strong>Better in Size</strong>、<strong>Better in Data</strong>和<strong>Better in Use</strong>三个特性。旗舰模型 Qwen2.5-72B-Instruct 的性能可与最先进的开放权重模型 Llama-3-405B-Instruct 相匹敌，而发布的专有的MoE模型——Qwen2.5-Turbo 和 Qwen2.5-Plus，也分别具备与 GPT-4o-mini 和 GPT-4o 竞争的性能。</p>
+<br>
+<br>
+<br>
+
+<h2 id="Architecture"><a href="#Architecture" class="headerlink" title="Architecture"></a>Architecture</h2><p>Qwen2.5与Qwen2类似，可分为dense model和MoE model，其中dense model包含<code>Qwen2.5-0.5B / 1.5B / 3B / 7B / 14B / 32B / 72B</code>，用于社区开源；MoE模型包含<code>Qwen2.5-Turbo</code>和<code>Qwen2.5-Plus</code>，主要用于API服务。</p>
+<h3 id="Dense-Model"><a href="#Dense-Model" class="headerlink" title="Dense Model"></a>Dense Model</h3><p>qwen2.5 dense model沿用了与Qwen2 dense model一致的模型架构：</p>
+<ul>
+<li>使用transformer decoder结构；</li>
+<li>带有QKV bias的GQA；</li>
+<li>SwiGLU激活函数；</li>
+<li>RoPE进行位置编码</li>
+<li>RMSNorm + Pre-norm进行Normalization</li>
+</ul>
+<p>dense model开源系列模型参数如下：</p>
+<div align=center>
+	<img src="img_1.png"/>
+</div>
+
+<br>
+
+<h3 id="MoE-Model"><a href="#MoE-Model" class="headerlink" title="MoE Model"></a>MoE Model</h3><p>在dense model的基础上，通过将原始的FFN替换为MoE 层，将其扩展为MoE model。</p>
+<p>每个 MoE 层由多个 FFN Expert和一个路由机制组成，该路由机制将 token 分派给 Top-k 个最相关的Expert（top-K routing）。参照Qwen2 MoE的做法，Qwen2.5 MoE也使用了shared experts（共享专家）和 routing-specific experts（路由专用专家）的混合机制，shared experts在各种任务中进行共享，routing-specific experts用于特定任务场景的选择。</p>
+<br>
+<br>
+<br>
+
+<h2 id="Tokenizer"><a href="#Tokenizer" class="headerlink" title="Tokenizer"></a>Tokenizer</h2><p>Qwen2.5沿用了Qwen的tokenizer，基于开源快速分词库tiktoken进行分词，其底层为BBPE。</p>
+<p>为了提升一致性并减少潜在兼容性问题，所有的Qwen2.5使用同一个词表。与Qwen2一致，Qwen2.5词表也包含151643个normal token，但是special token数量<strong>从原来的3个增加至22个</strong>，其中新增2个用于工具功能，其余用于其他模型能力。</p>
+<br>
+<br>
+<br>
+
+<h2 id="Pre-training"><a href="#Pre-training" class="headerlink" title="Pre-training"></a>Pre-training</h2><h3 id="Pre-training-Data"><a href="#Pre-training-Data" class="headerlink" title="Pre-training Data"></a>Pre-training Data</h3><p>Qwen2.5的预训练数据相较于Qwen2的有显著的优化提升，主要体现在以下几点：</p>
+<h4 id="更好的数据过滤"><a href="#更好的数据过滤" class="headerlink" title="更好的数据过滤"></a>更好的数据过滤</h4><p>使用 Qwen2-Instruct 作为“数据过滤器”，由于 Qwen2-Instruct 在更大的多语言语料库上训练过，具备更细致的质量判断能力，因此，它可以更好地保留高质量数据，并过滤掉多语言中低质量数据。相比 Qwen2，Qwen2.5所使用的数据过滤器功能更为强大。</p>
+<h4 id="更好的math和code相关数据"><a href="#更好的math和code相关数据" class="headerlink" title="更好的math和code相关数据"></a>更好的math和code相关数据</h4><p>在 Qwen2.5 的预训练中，加入了来自 <strong>Qwen2.5-Math</strong> 和 <strong>Qwen2.5-Coder</strong> 的训练数据，使得Qwen2.5在数学和编程任务上达到SOTA水平。</p>
+<h4 id="更好的合成数据"><a href="#更好的合成数据" class="headerlink" title="更好的合成数据"></a>更好的合成数据</h4><p>为了生成高质量的数学、代码和知识类合成数据，分别使用<strong>Qwen2-72B-Instruct</strong>和<strong>Qwen2-Math-72B-Instruct</strong>生成相应的数据，将生成的数据再经过<strong>通用 reward model</strong>和 <strong>Qwen2-Math-RM-72B</strong>进行进一步评判过滤，保证合成数据的质量。</p>
+<h4 id="更好的数据混合"><a href="#更好的数据混合" class="headerlink" title="更好的数据混合"></a>更好的数据混合</h4><p>Qwen Team使用Qwen2-Instruct 分类数据，发现各个领域的数据存在不平衡现象：</p>
+<ul>
+<li>电商、社交媒体、娱乐类内容占比过高，这些领域包含大量重复、模板化、低质量甚至机器生成内容；</li>
+<li>科技、科学、学术研究等高价值领域反而稀少。</li>
+</ul>
+<p>于是，Qwen2.5在预训练数据中对这些占比过高的领域进行下采样，对高价值的领域进行上采样，最终形成更加平衡且价值更高的预训练集。</p>
+<p>最终形成了比Qwen2更大、质量更优的预训练数据集，从Qwen2的7T tokens扩展至18T tokens。</p>
+<br>
+
+<h3 id="超参数的-Scaling-Law"><a href="#超参数的-Scaling-Law" class="headerlink" title="超参数的 Scaling Law"></a>超参数的 Scaling Law</h3><p><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2001.08361">Kaplan等人</a>提出的Scaling Law最主要的一个作用便是预测模型性能，指导算力资源配置。而Qwen Team基于Qwen2.5的预训练数据开发了一种<strong>关于超参数的Scaling Law</strong>，并将其用于寻找不同规模下的dense model和MoE model的最优训练超参数，例如batch size、学习率$\mu$等。</p>
+<p>于是，Qwen Team系统性地研究了如下两个超参数：<strong>最优学习率</strong>$\mu_{opt}$和<strong>最优batch size</strong>$B_{opt}$，看它们是如何随着模型规模$N$和数据规模$D$变化的。</p>
+<p>相关实验设置：</p>
+<ul>
+<li>44M ~ 14B规模参数的 dense 模型；</li>
+<li>44M ~ 1B 规模激活参数的 MoE 模型；</li>
+<li>数据规模从 0.8B 到 600B tokens。</li>
+</ul>
+<p>基于实验得到的这些最优超参，对最终的 loss 随模型规模与训练数据规模的变化规律进行建模，得到超参数的Scaling Law，并利用Scaling Law：</p>
+<ol>
+<li>预测不同 MoE 模型与 dense 模型的性能对应关系；</li>
+<li>帮助确定 MoE 的激活参数量和总参数量。</li>
+</ol>
+<p>从而确保例如 Qwen2.5-72B 和 Qwen2.5-14B 的 dense 版本与其对应 MoE 版本性能相当。</p>
+<br>
+
+<h3 id="Long-context-Pre-training"><a href="#Long-context-Pre-training" class="headerlink" title="Long-context Pre-training"></a>Long-context Pre-training</h3><p>为了训练效率最优，Qwen2.5采用两阶段方法进行训练：</p>
+<ol>
+<li>初始阶段，使用4096的上下文长度；</li>
+<li>后续扩展阶段，使用更长的上下文长度。</li>
+</ol>
+<p>根据上述规则，规定除了Qwen2.5-Turbo 外的所有Qwen2.5模型的训练上下文长度由4096 tokens变为32768 tokens，将同时将 RoPE 基频使用 ABF 技术从10000使用1000000。这里稍微解释一下RoPE的变频技术：</p>
+<h4 id="基于ABF的RoPE变频"><a href="#基于ABF的RoPE变频" class="headerlink" title="基于ABF的RoPE变频"></a>基于ABF的RoPE变频</h4><p>RoPE的角速度计算公式为$ω(d)&#x3D;\theta^{-\frac{2d}{D}}$，其中$\theta$为基频，$d$代表总维度为$D$的向量的第$d$个维度。</p>
+<p>RoPE的$w$越大，旋转地越快，周期重叠速度越快，可区分\理解的上下文长度就越短，反之亦然。逐渐增大RoPE的基频会使得其旋转速度变慢，对长上下文的理解能力也更强。</p>
+<p>那为什么要使用ABF（）</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://luvisdru9.github.io">luvisdru9</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://luvisdru9.github.io/2025/12/05/qwen2_5/">https://luvisdru9.github.io/2025/12/05/qwen2_5/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://luvisdru9.github.io" target="_blank">LUVISDRU9</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/NLP/">NLP</a><a class="post-meta__tags" href="/tags/LLM/">LLM</a><a class="post-meta__tags" href="/tags/DL/">DL</a><a class="post-meta__tags" href="/tags/ML/">ML</a></div><div class="post-share"><div class="social-share" data-image="/2025/12/05/qwen2_5/img.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2025/12/02/qwen2/" title="Qwen2技术报告阅读笔记"><img class="cover" src="/2025/12/02/qwen2/img_2.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">Qwen2技术报告阅读笔记</div></div><div class="info-2"><div class="info-item-1">Qwen2技术报告阅读笔记</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/07/01/Sbert/" title="Sentence Bert"><img class="cover" src="/2025/07/01/Sbert/img_7.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-01</div><div class="info-item-2">Sentence Bert</div></div><div class="info-2"><div class="info-item-1">Sentence Bert论文阅读笔记</div></div></div></a><a class="pagination-related" href="/2025/07/28/attention/" title="Self-attetion &amp; Cross-attetion"><img class="cover" src="/2025/07/28/attention/img_3.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-28</div><div class="info-item-2">Self-attetion &amp; Cross-attetion</div></div><div class="info-2"><div class="info-item-1">Self-attetion & Cross-attetion</div></div></div></a><a class="pagination-related" href="/2025/06/30/bert/" title="Bert"><img class="cover" src="/2025/06/30/bert/img_2.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-30</div><div class="info-item-2">Bert</div></div><div class="info-2"><div class="info-item-1">Bert论文阅读笔记</div></div></div></a><a class="pagination-related" href="/2025/07/09/gte/" title="文本嵌入模型-GTE"><img class="cover" src="/2025/07/09/gte/img_5.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-09</div><div class="info-item-2">文本嵌入模型-GTE</div></div><div class="info-2"><div class="info-item-1">GTE论文阅读笔记</div></div></div></a><a class="pagination-related" href="/2025/07/22/RetroMAEBGE/" title="RetroMAE &amp; BGE"><img class="cover" src="/2025/07/22/RetroMAEBGE/img_5.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-22</div><div class="info-item-2">RetroMAE &amp; BGE</div></div><div class="info-2"><div class="info-item-1">RetroMAE & BGE</div></div></div></a><a class="pagination-related" href="/2025/08/20/gpt1/" title="GPT-1技术报告阅读笔记"><img class="cover" src="/2025/08/20/gpt1/img_9.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-20</div><div class="info-item-2">GPT-1技术报告阅读笔记</div></div><div class="info-2"><div class="info-item-1">GPT-1技术报告阅读笔记</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avator.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">luvisdru9</div><div class="author-info-description">Do not go gentle into that good night.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">15</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">8</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/luvisdru9"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Introduction"><span class="toc-number">1.</span> <span class="toc-text">Introduction</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Architecture"><span class="toc-number">2.</span> <span class="toc-text">Architecture</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Dense-Model"><span class="toc-number">2.1.</span> <span class="toc-text">Dense Model</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MoE-Model"><span class="toc-number">2.2.</span> <span class="toc-text">MoE Model</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Tokenizer"><span class="toc-number">3.</span> <span class="toc-text">Tokenizer</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Pre-training"><span class="toc-number">4.</span> <span class="toc-text">Pre-training</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Pre-training-Data"><span class="toc-number">4.1.</span> <span class="toc-text">Pre-training Data</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9B%B4%E5%A5%BD%E7%9A%84%E6%95%B0%E6%8D%AE%E8%BF%87%E6%BB%A4"><span class="toc-number">4.1.1.</span> <span class="toc-text">更好的数据过滤</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9B%B4%E5%A5%BD%E7%9A%84math%E5%92%8Ccode%E7%9B%B8%E5%85%B3%E6%95%B0%E6%8D%AE"><span class="toc-number">4.1.2.</span> <span class="toc-text">更好的math和code相关数据</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9B%B4%E5%A5%BD%E7%9A%84%E5%90%88%E6%88%90%E6%95%B0%E6%8D%AE"><span class="toc-number">4.1.3.</span> <span class="toc-text">更好的合成数据</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9B%B4%E5%A5%BD%E7%9A%84%E6%95%B0%E6%8D%AE%E6%B7%B7%E5%90%88"><span class="toc-number">4.1.4.</span> <span class="toc-text">更好的数据混合</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B6%85%E5%8F%82%E6%95%B0%E7%9A%84-Scaling-Law"><span class="toc-number">4.2.</span> <span class="toc-text">超参数的 Scaling Law</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Long-context-Pre-training"><span class="toc-number">4.3.</span> <span class="toc-text">Long-context Pre-training</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%9F%BA%E4%BA%8EABF%E7%9A%84RoPE%E5%8F%98%E9%A2%91"><span class="toc-number">4.3.1.</span> <span class="toc-text">基于ABF的RoPE变频</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/05/qwen2_5/" title="Qwen2.5技术报告阅读笔记"><img src="/2025/12/05/qwen2_5/img.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Qwen2.5技术报告阅读笔记"/></a><div class="content"><a class="title" href="/2025/12/05/qwen2_5/" title="Qwen2.5技术报告阅读笔记">Qwen2.5技术报告阅读笔记</a><time datetime="2025-12-05T02:26:27.941Z" title="发表于 2025-12-05 10:26:27">2025-12-05</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/02/qwen2/" title="Qwen2技术报告阅读笔记"><img src="/2025/12/02/qwen2/img_2.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Qwen2技术报告阅读笔记"/></a><div class="content"><a class="title" href="/2025/12/02/qwen2/" title="Qwen2技术报告阅读笔记">Qwen2技术报告阅读笔记</a><time datetime="2025-12-02T03:48:47.465Z" title="发表于 2025-12-02 11:48:47">2025-12-02</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/08/20/gpt1/" title="GPT-1技术报告阅读笔记"><img src="/2025/08/20/gpt1/img_9.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="GPT-1技术报告阅读笔记"/></a><div class="content"><a class="title" href="/2025/08/20/gpt1/" title="GPT-1技术报告阅读笔记">GPT-1技术报告阅读笔记</a><time datetime="2025-08-19T16:00:00.000Z" title="发表于 2025-08-20 00:00:00">2025-08-20</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/08/04/prepostnorm/" title="Post-norm &amp; Pre-norm"><img src="/2025/08/04/prepostnorm/img_5.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Post-norm &amp; Pre-norm"/></a><div class="content"><a class="title" href="/2025/08/04/prepostnorm/" title="Post-norm &amp; Pre-norm">Post-norm &amp; Pre-norm</a><time datetime="2025-08-03T16:00:00.000Z" title="发表于 2025-08-04 00:00:00">2025-08-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/07/31/ffnaddnorm/" title="关于FFN与Add &amp; Norm的一些学习与思考"><img src="/2025/07/31/ffnaddnorm/img_1.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="关于FFN与Add &amp; Norm的一些学习与思考"/></a><div class="content"><a class="title" href="/2025/07/31/ffnaddnorm/" title="关于FFN与Add &amp; Norm的一些学习与思考">关于FFN与Add &amp; Norm的一些学习与思考</a><time datetime="2025-07-30T16:00:00.000Z" title="发表于 2025-07-31 00:00:00">2025-07-31</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 By luvisdru9</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.2</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.2"></script><script src="/js/main.js?v=5.5.2"></script><div class="js-pjax"></div><script async data-pjax src="/"></script></div></body></html>
