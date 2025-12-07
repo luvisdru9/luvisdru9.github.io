@@ -1,0 +1,255 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>LLaMA技术报告阅读笔记 | LUVISDRU9</title><meta name="author" content="luvisdru9"><meta name="copyright" content="luvisdru9"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#8ABEB9"><meta name="description" content="LLaMA技术报告阅读笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LLaMA技术报告阅读笔记">
+<meta property="og:url" content="https://luvisdru9.github.io/2025/09/08/llama/index.html">
+<meta property="og:site_name" content="LUVISDRU9">
+<meta property="og:description" content="LLaMA技术报告阅读笔记">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://luvisdru9.github.io/2025/09/08/llama/img.png">
+<meta property="article:published_time" content="2025-09-07T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-07T16:00:00.000Z">
+<meta property="article:author" content="luvisdru9">
+<meta property="article:tag" content="DL">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="ML">
+<meta property="article:tag" content="NLP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://luvisdru9.github.io/2025/09/08/llama/img.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "LLaMA技术报告阅读笔记",
+  "url": "https://luvisdru9.github.io/2025/09/08/llama/",
+  "image": "https://luvisdru9.github.io/2025/09/08/llama/img.png",
+  "datePublished": "2025-09-07T16:00:00.000Z",
+  "dateModified": "2025-09-07T16:00:00.000Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "luvisdru9",
+      "url": "https://luvisdru9.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/aislogo.png"><link rel="canonical" href="https://luvisdru9.github.io/2025/09/08/llama/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="stylesheet" href="/css/index.css?v=5.5.2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#8ABEB9')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'LLaMA技术报告阅读笔记',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 8.1.1"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/2025/09/08/llama/img.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">LUVISDRU9</span></a><a class="nav-page-title" href="/"><span class="site-name">LLaMA技术报告阅读笔记</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">LLaMA技术报告阅读笔记</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-09-07T16:00:00.000Z" title="发表于 2025-09-08 00:00:00">2025-09-08</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-09-07T16:00:00.000Z" title="更新于 2025-09-08 00:00:00">2025-09-08</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/NLP/">NLP</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="Introduction">Introduction</h2>
+<p>GPT-3基于Few-shot展示了一个现象：模型的能力随着其规模的增大而获得提升。然而，Hoffmann等人在2022年的工作——<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2203.15556">《Training Compute-Optimal Large Language Models》</a>中提到：在固定的计算预算下，最佳性能并不是由最大模型取得的，而是由较小的模型在更多数据上训练得到的。Hoffmann等人修正后的scaling law表明：在特定的训练计算预算下，确定数据集规模和模型规模的最佳配比。</p>
+<p>然而，上述的目标却忽视了推理预算，而推理预算在大规模部署语言模型时至关重要。例如大模型虽然能够在训练时快速地达到某个性能，在部署推理时成本却较高；而小模型虽然本身能力有限，需要多轮训练才能收敛到某个性能，但是在推理时成本更低，长期来看更为实用。</p>
+<p>Meta的目标是：使用比通常训练更多的数据，来在不同推理预算下都能找到“性能最佳”的模型。LLaMA的规模从7B到65B不等，同时，其训练数据均是开源的，为开源社区提供了又一个重要资源。</p>
+<br>
+<br>
+<br>
+<h2 id="Pre-training">Pre-training</h2>
+<h3 id="Pre-training-Data">Pre-training Data</h3>
+<p>LLaMA的预训练数据来自多个数据源，覆盖了多个领域，其中也不乏包含了其他LLM的开源预训练数据，这里介绍一下：</p>
+<h4 id="English-CommonCrawl-67">English CommonCrawl [67%]</h4>
+<p>Meta收集了2017-2020年间的五份Common Crawl dump，使用CCNet Pipline进行数据处理。（CCNet是一个Facebook提出的，从CommonCrawl网页数据中自动构建高质量语料的处理流水线。包含如下几个步骤：</p>
+<ol>
+<li>
+<p>去重：这里使用的是行级别去重，将网页数据按照行划分，使用Minihash、Simhash等算法进行重复文本检测，最后去除这些重复的内容；</p>
+</li>
+<li>
+<p>语言识别：只保留目标语言的文本，其中LLaMA中主要使用的是英文。具体而言，CCNet使用 fastText 的语言分类器，能在几毫秒内识别一句话的语言。这样做能够收敛数据中包含的语言种类，提高模型的专注性；</p>
+</li>
+<li>
+<p>质量过滤：使用n-gram进行计算，从而判断句子流畅度，过滤掉低质量的语料。</p>
+</li>
+</ol>
+<h4 id="C4-15">C4 [15%]</h4>
+<p>在探索性实验中，Meta发现使用多样化的预处理CommonCrawl数据集能够提升模型性能，于是Meta在数据集中加入了一定量的C4数据集。C4也包含去重与语言识别两个步骤，但是在质量过滤步骤使用了启发式的方法，通过标点、长度、字符比例等经验规则来快速去掉低质量语料。</p>
+<h4 id="Github-4-5">Github [4.5%]</h4>
+<p>Meta使用了 Google BigQuery 上公开可用的 GitHub 数据集，只选公开可再利用的项目，进行许可证筛选。而后进行数据清洗，包括对低质量文件的过滤（如果某些文件的行过短或过长，或字母数字字符比例异常，说明可能是无效代码、二进制/乱码，直接丢弃）和模版代码的去除（通过正则表达式剔除“样板部分”，比如版权声明、自动生成的文件头注释等，这些部分通常与代码主题关系不大）。最后进行文件级别的去重，去掉一些拷贝、fork之类的文件。</p>
+<h4 id="Wikipedia-4-5">Wikipedia [4.5%]</h4>
+<p>引入了 20 种语言的 Wikipedia 数据，清洗掉格式信息后（去掉超链接、注释和格式化样板，比如维基百科里的 HTML 标签、编辑痕迹、表格标记等）作为高质量百科知识来源。</p>
+<h4 id="Gutenberg-and-Books3-4-5">Gutenberg and Books3 [4.5%]</h4>
+<p>这部分数据来源于 Project Gutenberg （多是文学经典、历史文献、语言偏正式、结构完整）和 Books3 （包含现代刊物、更符合当前时代的写作风格与主题）。此外，也进行了书籍层面的去重。</p>
+<h4 id="ArXiv-2-5">ArXiv [2.5%]</h4>
+<p>从 arXiv 的 LaTeX 源文件中提取科学论文相关语料，去除非正文部分、参考文献和注释部分并统一宏定义。</p>
+<h4 id="Stack-Exchange-2">Stack Exchange [2%]</h4>
+<p>Stack Exchange 是一个问答平台，选择 28 个最大子站点，这些站点具有覆盖面广的特点，但避免小众站点带来稀疏数据。而后去除网页的html标签，得到干净文本。在 Stack Exchange 中，答案具有投票机制，按分数从高到低排序，使得模型优先接触更优的回答。</p>
+<div align="center">
+    <img src="img_1.png"/>
+</div>
+<br>
+<h3 id="Tokenizer">Tokenizer</h3>
+<p>使用基于SentencePiece实现的BPE算法进行分词，并做了两点优化：数字拆分为单个字符，提升泛化与数值处理能力；在遇到未知的 UTF-8 字符时回退到字节级别进行分解（如一些表情符号）。</p>
+<br>
+<h3 id="Model">Model</h3>
+<p>Meta在架构上从一些工作上获得灵感，组建了LLaMA的架构：</p>
+<ul>
+<li>
+<p>为了提高训练的稳定性，与GPT-3一样，LLaMA使用了Pre-norm作为归一化选择，选择RMSNorm作为归一化函数；</p>
+</li>
+<li>
+<p>从PaLM中获得灵感，使用SwiGLU作为激活函数来代替ReLU，但是使用<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mn>2</mn><mn>3</mn></mfrac><mn>4</mn><mi>d</mi></mrow><annotation encoding="application/x-tex">\frac{2}{3}4d</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.1901em;vertical-align:-0.345em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8451em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">3</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mord">4</span><span class="mord mathnormal">d</span></span></span></span>维度，而不是PaLM中的<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>4</mn><mi>d</mi></mrow><annotation encoding="application/x-tex">4d</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">4</span><span class="mord mathnormal">d</span></span></span></span>；</p>
+</li>
+<li>
+<p>和GPT-Neo一样，LLaMA移除了绝对位置编码，使用RoPE进行位置编码；</p>
+</li>
+<li>
+<p>使用Loshchilov等人在17年提出的AdamW优化器，超参数设置为：<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>β</mi><mn>1</mn></msub><mo>=</mo><mn>0.9</mn><mo separator="true">,</mo><msub><mi>β</mi><mn>2</mn></msub><mo>=</mo><mn>0.95</mn></mrow><annotation encoding="application/x-tex">\beta_1=0.9, \beta_2=0.95</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05278em;">β</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0528em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord">0.9</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05278em;">β</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0528em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0.95</span></span></span></span>。使用 cosine lr schedule 将学习率衰减最大学习率的10%。此外，LLaMA还是用了0.1的 weight decay、1.0的 gradient clipping、2000步的warmup。Batch size 和 lr 会随着模型规模的变化而变化，具体如下表：</p>
+</li>
+</ul>
+<div align="center">
+    <img src="img_2.png"/>
+</div>
+<br>
+<h3 id="Efficient-implementation">Efficient implementation</h3>
+<p>Meta为了提高LLaMA的训练效率，采取了一系列措施：</p>
+<ol>
+<li>基于<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mi>f</mi><mi>o</mi><mi>r</mi><mi>m</mi><mi>e</mi><mi>r</mi><mi>s</mi></mrow><annotation encoding="application/x-tex">xformers</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">x</span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="mord mathnormal" style="margin-right:0.02778em;">or</span><span class="mord mathnormal">m</span><span class="mord mathnormal">ers</span></span></span></span>，使用了一种高效的因果注意力实现方式；</li>
+<li>LLaMA中手写了backward，避免PyTorch的自动微分保存所有激活值，LLaMA只保存昂贵的激活（比如线性层输出），而不是全部保存，实现定制化checkpoint；</li>
+<li>通过模型并行（model parallelism）和序列并行（sequence parallelism）降低单张GPU的显存压力。同时，将GPU之间的通信与部分激活值的计算一同进行，节省训练时间。</li>
+</ol>
+<br>
+<br>
+<br>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2302.13971">《LLaMA:OpenandEfficient Foundation Language Models》</a></li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://luvisdru9.github.io">luvisdru9</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://luvisdru9.github.io/2025/09/08/llama/">https://luvisdru9.github.io/2025/09/08/llama/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://luvisdru9.github.io" target="_blank">LUVISDRU9</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/NLP/">NLP</a><a class="post-meta__tags" href="/tags/LLM/">LLM</a><a class="post-meta__tags" href="/tags/DL/">DL</a><a class="post-meta__tags" href="/tags/ML/">ML</a></div><div class="post-share"><div class="social-share" data-image="/2025/09/08/llama/img.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/09/11/act/" title="LLM中的激活函数"><img class="cover" src="/2025/09/11/act/img.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">LLM中的激活函数</div></div><div class="info-2"><div class="info-item-1">LLM中的激活函数</div></div></div></a><a class="pagination-related" href="/2025/09/04/moe/" title="MoE —《OUTRAGEOUSLY LARGE NEURAL NETWORKS:THE SPARSELY-GATED MIXTURE-OF-EXPERTS LAYER》论文阅读笔记"><img class="cover" src="/2025/09/04/moe/img.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">MoE —《OUTRAGEOUSLY LARGE NEURAL NETWORKS:THE SPARSELY-GATED MIXTURE-OF-EXPERTS LAYER》论文阅读笔记</div></div><div class="info-2"><div class="info-item-1">MoE —《OUTRAGEOUSLY LARGE NEURAL NETWORKS:THE SPARSELY-GATED MIXTURE-OF-EXPERTS LAYER》论文阅读笔记</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/09/11/act/" title="LLM中的激活函数"><img class="cover" src="/2025/09/11/act/img.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-11</div><div class="info-item-2">LLM中的激活函数</div></div><div class="info-2"><div class="info-item-1">LLM中的激活函数</div></div></div></a><a class="pagination-related" href="/2025/07/01/Sbert/" title="Sentence Bert"><img class="cover" src="/2025/07/01/Sbert/img_7.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-01</div><div class="info-item-2">Sentence Bert</div></div><div class="info-2"><div class="info-item-1">Sentence Bert论文阅读笔记</div></div></div></a><a class="pagination-related" href="/2025/06/30/bert/" title="Bert"><img class="cover" src="/2025/06/30/bert/img_2.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-30</div><div class="info-item-2">Bert</div></div><div class="info-2"><div class="info-item-1">Bert论文阅读笔记</div></div></div></a><a class="pagination-related" href="/2025/07/28/attention/" title="Self-attetion &amp; Cross-attetion"><img class="cover" src="/2025/07/28/attention/img_3.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-28</div><div class="info-item-2">Self-attetion &amp; Cross-attetion</div></div><div class="info-2"><div class="info-item-1">Self-attetion & Cross-attetion</div></div></div></a><a class="pagination-related" href="/2025/08/06/decode/" title="LLM解码策略"><img class="cover" src="/2025/08/06/decode/img.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-06</div><div class="info-item-2">LLM解码策略</div></div><div class="info-2"><div class="info-item-1">LLM解码策略</div></div></div></a><a class="pagination-related" href="/2025/07/31/ffnaddnorm/" title="关于FFN与Add &amp; Norm的一些学习与思考"><img class="cover" src="/2025/07/31/ffnaddnorm/img_1.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-31</div><div class="info-item-2">关于FFN与Add &amp; Norm的一些学习与思考</div></div><div class="info-2"><div class="info-item-1">关于FFN与Add & Norm的一些学习与思考</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avator.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">luvisdru9</div><div class="author-info-description">Do not go gentle into that good night.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">28</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">8</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/luvisdru9"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Introduction"><span class="toc-number">1.</span> <span class="toc-text">Introduction</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Pre-training"><span class="toc-number">2.</span> <span class="toc-text">Pre-training</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Pre-training-Data"><span class="toc-number">2.1.</span> <span class="toc-text">Pre-training Data</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#English-CommonCrawl-67"><span class="toc-number">2.1.1.</span> <span class="toc-text">English CommonCrawl [67%]</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#C4-15"><span class="toc-number">2.1.2.</span> <span class="toc-text">C4 [15%]</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Github-4-5"><span class="toc-number">2.1.3.</span> <span class="toc-text">Github [4.5%]</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Wikipedia-4-5"><span class="toc-number">2.1.4.</span> <span class="toc-text">Wikipedia [4.5%]</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Gutenberg-and-Books3-4-5"><span class="toc-number">2.1.5.</span> <span class="toc-text">Gutenberg and Books3 [4.5%]</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ArXiv-2-5"><span class="toc-number">2.1.6.</span> <span class="toc-text">ArXiv [2.5%]</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Stack-Exchange-2"><span class="toc-number">2.1.7.</span> <span class="toc-text">Stack Exchange [2%]</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Tokenizer"><span class="toc-number">2.2.</span> <span class="toc-text">Tokenizer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Model"><span class="toc-number">2.3.</span> <span class="toc-text">Model</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Efficient-implementation"><span class="toc-number">2.4.</span> <span class="toc-text">Efficient implementation</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">3.</span> <span class="toc-text">参考资料</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/06/cot/" title="CoT - 《Chain-of-Thought Prompting Elicits Reasoning》 in Large Language Models"><img src="/2025/12/06/cot/img.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CoT - 《Chain-of-Thought Prompting Elicits Reasoning》 in Large Language Models"/></a><div class="content"><a class="title" href="/2025/12/06/cot/" title="CoT - 《Chain-of-Thought Prompting Elicits Reasoning》 in Large Language Models">CoT - 《Chain-of-Thought Prompting Elicits Reasoning》 in Large Language Models</a><time datetime="2025-12-06T02:57:31.357Z" title="发表于 2025-12-06 10:57:31">2025-12-06</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/05/qwen2_5/" title="Qwen2.5技术报告阅读笔记"><img src="/2025/12/05/qwen2_5/img_2.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Qwen2.5技术报告阅读笔记"/></a><div class="content"><a class="title" href="/2025/12/05/qwen2_5/" title="Qwen2.5技术报告阅读笔记">Qwen2.5技术报告阅读笔记</a><time datetime="2025-12-05T02:26:27.941Z" title="发表于 2025-12-05 10:26:27">2025-12-05</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/02/qwen2/" title="Qwen2技术报告阅读笔记"><img src="/2025/12/02/qwen2/img_2.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Qwen2技术报告阅读笔记"/></a><div class="content"><a class="title" href="/2025/12/02/qwen2/" title="Qwen2技术报告阅读笔记">Qwen2技术报告阅读笔记</a><time datetime="2025-12-02T03:48:47.465Z" title="发表于 2025-12-02 11:48:47">2025-12-02</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/11/07/prefixtuning/" title="Prefix Tuning -《Prefix-Tuning:Optimizing Continuous Prompts for Generation》论文阅读笔记"><img src="/2025/11/07/prefixtuning/img.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Prefix Tuning -《Prefix-Tuning:Optimizing Continuous Prompts for Generation》论文阅读笔记"/></a><div class="content"><a class="title" href="/2025/11/07/prefixtuning/" title="Prefix Tuning -《Prefix-Tuning:Optimizing Continuous Prompts for Generation》论文阅读笔记">Prefix Tuning -《Prefix-Tuning:Optimizing Continuous Prompts for Generation》论文阅读笔记</a><time datetime="2025-11-06T16:00:00.000Z" title="发表于 2025-11-07 00:00:00">2025-11-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/10/25/ptuning/" title="Prompt Tuning -《The Power of Scale for Parameter-Efficient Prompt Tuning》论文阅读笔记"><img src="/2025/10/25/ptuning/img.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Prompt Tuning -《The Power of Scale for Parameter-Efficient Prompt Tuning》论文阅读笔记"/></a><div class="content"><a class="title" href="/2025/10/25/ptuning/" title="Prompt Tuning -《The Power of Scale for Parameter-Efficient Prompt Tuning》论文阅读笔记">Prompt Tuning -《The Power of Scale for Parameter-Efficient Prompt Tuning》论文阅读笔记</a><time datetime="2025-10-24T16:00:00.000Z" title="发表于 2025-10-25 00:00:00">2025-10-25</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 By luvisdru9</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.2</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.2"></script><script src="/js/main.js?v=5.5.2"></script><div class="js-pjax"><script>(async () => {
+  const showKatex = () => {
+    document.querySelectorAll('#article-container .katex').forEach(el => el.classList.add('katex-show'))
+  }
+
+  if (!window.katex_js_css) {
+    window.katex_js_css = true
+    await btf.getCSS('https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex.min.css')
+    if (false) {
+      await btf.getScript('https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/contrib/copy-tex.min.js')
+    }
+  }
+
+  showKatex()
+})()</script></div><script async data-pjax src="https://cdn.bootcdn.net/ajax/libs/busuanzi/2.3.0/bsz.pure.mini.js"></script></div></body></html>
