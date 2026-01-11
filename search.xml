@@ -1,0 +1,3125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>LLM中的激活函数</title>
+    <url>/2025/09/11/act/</url>
+    <content><![CDATA[ReLU(Rectified Linear Unit)
+
+	
+
+表达式：ReLU(x)=max(0,x)ReLU(x)=max(0,x)ReLU(x)=max(0,x)。
+在最早期的一些神经网络和小型NLP模型中，ReLU是出现频次最高的激活函数，但是在Transformer出现后，ReLU的一些问题也随之被放大，在x&lt;0x&lt;0x&lt;0时，ReLU将梯度完全截断，在大规模的神经网络中，这很可能导致一些神经元长期得不到更新，出现“dead neuron”的风险。
+
+
+
+GELU(Gaussian Error Linear Unit)
+
+	
+
+Hendrycks等人在2016年提出了一种名为GELU的激活函数，其表达式为：GELU(x)=x⋅ϕ(x)GELU(x)=x \cdot \phi(x)GELU(x)=x⋅ϕ(x)，其中ϕ(x)\phi(x)ϕ(x)为标准正态分布的CDF(cumulative distribution function)，可以写为ϕ(x)=12π∫−∞xe−t22dt\phi(x)= \frac{1}{2 \pi} \int_{- \infty}^{x} e^{- \frac{t^2}{2}}dtϕ(x)=2π1​∫−∞x​e−2t2​dt。
+在实际应用中，为了便于实现，PyTorch、Tensorflow等框架都使用了近似计算来表示GELU，原文中也有相关叙述：GELU(x)=0.5x(1+tanh[2/π(x+0.044715x3)])GELU(x)=0.5x(1+tanh[\sqrt{2/\pi(x+0.044715x^3)}])GELU(x)=0.5x(1+tanh[2/π(x+0.044715x3)​])。
+GELU可以理解为带有概率的“Soft Gate”ReLU，输入xxx被保留的概率为ϕ(x)\phi(x)ϕ(x)，是一个平滑的激活过程：
+
+
+x=0x=0x=0时，ϕ(x)=0.5\phi(x)=0.5ϕ(x)=0.5，激活结果仍然是0，这一点似乎与ReLU结果相等，但是ϕ(x)=0.5\phi(x)=0.5ϕ(x)=0.5传达了一个信号：GELU是平滑的，他保持一个“确信度”，在零点处，这个确信度为0.5；
+
+
+x≫0x \gg 0x≫0时，ϕ(x)→1\phi(x) \to 1ϕ(x)→1，对于较大的正数而言，GELU“确信度”较高，几乎保留了整个原始的x，在x近乎于无穷大时，GELU的激活值接近于ReLU的激活值；
+
+
+x≪0x \ll 0x≪0时，ϕ(x)→0\phi(x) \to 0ϕ(x)→0，对于较大的负数而言，GELU“确信度”较低，非常小的保留概率使得激活值接近于0，但是与ReLU不同的是，任何负数在GELU的激活后都会保留一些负信号，而不是直接清空。
+
+
+GELU这种平滑且连续可导的激活函数在实际应用中优化更稳定，且能很好地避免“dead neuron”的问题，BERT、GPT-2等模型中便使用了GELU作为激活函数方案。
+
+
+
+GLU(Gated Linear Unit)
+Dauphin等人在2017年提出了GLU，GLU利用可学习的门控机制进行信息控制，其表达式为：GLU(x)=(xW+b)⊗σ(xV+c)GLU(x)=(xW+b) \otimes \sigma(xV+c)GLU(x)=(xW+b)⊗σ(xV+c)，其中WWW和VVV都是可训练的权重，⊗\otimes⊗为逐元素乘法。
+根据公式分析，GLU相当于就是对输入作线性变化，而后使用sigmoid函数作为门控控制输出，通过可学习的权重与模型一起学习如何对信息进行更优的控制。
+GLU最早用于CNN，而后以一些变体的形式出现在一些大模型当中，下面介绍主要的三个变体：GeGLU、ReGLU和SwiGLU，这些变体在Switch Transformer、T5、PaLM、LLaMA等模型架构中都展现了非常好的性能。
+
+
+
+ReGLU(Gated GELU)
+ReGLU在GLU的基础上，将sigmoid函数换成了ReLU函数，其表达式为：ReGLU(x)=(xW+b)⊗ReLU(xV+c)ReGLU(x)=(xW+b) \otimes ReLU(xV+c)ReGLU(x)=(xW+b)⊗ReLU(xV+c)。
+sigmoid函数作为门控而言，容易进入梯度饱和区而导致出现梯度消失的情况；而ReLU虽然会产生“dead neuron”情况，但是部分神经元仍旧梯度稳定，相比于sigmoid更适用于深层网络，且这种强制截断导向的“稀疏性”结合门控机制也许能够带来更好的表达与正则化。
+
+
+
+GeGLU(Gated GELU)
+GeGLU类似于ReGLU，但是用GELU代替了ReLU，其表达式为：GeGLU(x)=(xW+b)⊗GELU(xV+c)GeGLU(x)=(xW+b) \otimes GELU(xV+c)GeGLU(x)=(xW+b)⊗GELU(xV+c)。
+结合上述GELU的特性来看，GELU相当于结合了sigmoid和ReLU的优点，在保持平滑性的基础上，软约束地引入了稀疏性。
+
+
+
+SwiGLU(Swish GLU)
+22年，Google的PaLM中首次使用了SwiGLU，这个激活函数结合了GLU以及Google之前的工作Swish，其表达式为：SwiGLU(x)=(xW+b)⊗Swish(xV+c)SwiGLU(x)=(xW+b) \otimes Swish(xV+c)SwiGLU(x)=(xW+b)⊗Swish(xV+c)，下面先来介绍一下Swish函数。
+Swish函数的表达式为：Swish(x)=x⋅σ(βx)Swish(x)=x \cdot \sigma(\beta x)Swish(x)=x⋅σ(βx)，当β\betaβ取不同值的时候，Swish的特性曲线也不相同：
+
+	
+
+可见Swish函数是平滑的，β→0\beta \to 0β→0时，Swish函数接近于线性函数f(x)=x2f(x)=\frac{x}{2}f(x)=2x​；当β→∞\beta \to \inftyβ→∞时，Swish函数几乎变为了ReLU。当β=1\beta =1β=1时，Swish(x)=x⋅σ(x)Swish(x)=x \cdot \sigma(x)Swish(x)=x⋅σ(x)，这时候我们将Swish函数称为SiLU(Sigmoid Linear Unit)函数，非常直观，就是一个Linear乘上一个Sigmoid。
+SwiGLU在负区间有小梯度，不会像ReLU一样出现“dead neuron”；而对比GeGLU，SwiGLU中的Swish函数计算效率相比于GELU中的ϕ(x)\phi(x)ϕ(x)而言更高，更适合大规模训练。
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RetroMAE &amp; BGE</title>
+    <url>/2025/07/22/RetroMAEBGE/</url>
+    <content><![CDATA[提出背景
+NLP任务中，大部分预训练模型都是基于token级别任务进行训练的，例如Seq2Seq范式与MLM范式。但是密集检索任务（比如RAG）更倾向于句子级别的表示，需要捕捉句子的信息和之间的关系，一般主流的策略是自我对比学习和基于自动编码。
+对比学习会受到增强的数据质量的限制，需要大量的负样本（hard negative samples)。
+基于自动编码的方法不受数据增强和负样本采样的限制，文章中认为下面两个因素会影响基于自动编码方法的性能：
+
+重建任务必须对编码质量有足够的要求
+预训练数据需要被充分利用
+
+文章没有从数据增强（构造正样本/负样本）出发，而是通过重构sentence embedding来增强表征效果。
+
+
+
+Encoder &amp; Decoder
+
+	
+
+Encoding
+类似于Bert，给定一个句子输入X，随机mask掉其中一小部分token后得到Input。通常会采用中等的mask比例（15%～30%），比一般的MLM的任务稍高一些，从而能保留句子原本大部分的信息。然后利用一个编码器对输入进行编码，得到对应的的句向量。文章中采用了类似BERT的编码器，最终将[CLS]位置输出作为句子向量。
+
+Decoding
+同样给定该句子输入X，随机mask掉其中一部分token得到输入。文章中此处采取比encoder部分更加激进的mask比例（50%～70%），利用mask后的文本以及encoder生成的句向量对文本进行重建。
+因为Decoding环节mask掉了大部分的输入Token，这强迫重建任务要从Encoding得到的句向量中获取大量的信息进行学习，从而迫使Encoding学习得到一个高质量的句向量。
+
+
+
+预训练流程
+文章认为，上述的Decoding方法存在某些不足之处，主要分为两处：
+
+解码过程中，交叉熵损失函数只能从被mask掉的token中得到
+每次进行重建训练时，都是基于相同的上下文进行
+针对上述现象，文章提出了以下两种策略进行优化：
+
+
+	
+
+双流自我注意力
+文中提出一种双流自我注意力，输入部分会生成两个流H1和H2，H1是sentence embedding+Position embedding，H2为sentence embedding和token embedding+position embedding，得到H1和H2后，利用H1作为Q，H2作为K、V，H1中的每一个embedding会去H2中寻找最重要的上下文。
+
+	
+
+
+特定位置注意力掩码的增强解码
+引入了特定位置注意力掩码的增强解码，这样能够随机规定哪些token能被第1个token看到(这里保证自身看不到自身)，引入了一定随机性，最后输出的结果与H1一起（残差连接）一起过了layernorm和FFN之后用于重建原始输入（这里是全部的输入）。
+
+	
+
+交叉熵损失函数可写做：
+
+	
+
+文章基于预训练的Bert参数进行训练，在retrieval任务上进行zero-shot测试，以及基于DPR、ANCE微调后的有监督性能测试。
+
+
+
+BGE
+BGE为北京智源人工智能实验室(BAAI)提出的文本嵌入模型，采用RetroMAE的预训练方法，基于Wudao数据集进行预训练，收集大量中文pair形式的通用文本数据，利用text2vec-chinese计算文本相似度后，选取一定阈值以上的数据对，对模型进行对比学习微调。
+在特定任务中，不同的任务可能导致pair的相似度变化较大，争对这个问题，提出了两点解决方案：
+
+Instruction tuning；2.进行难负例挖掘；最后再在进行改造后的数据集上进行finetune；
+将unlabeled的pair与领域监督数据集结合，涵盖retrieval、ranking、similarity comparison等任务，构建了数据集C-MTP。
+
+
+
+
+参考资料
+
+《RetroMAE: Pre-Training Retrieval-oriented Language Models Via Masked Auto-Encoder》
+《C-Pack: Packed Resources For General Chinese Embeddings》
+https://zhuanlan.zhihu.com/p/649049846
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Bert</title>
+    <url>/2025/06/30/bert/</url>
+    <content><![CDATA[网络结构
+多层transformer的encoder堆叠组成，Base Bert由12层encoder组成
+Bert的embedding由三个部分组成：Token Embeddings+Segment Embeddings+Position Embeddings：
+
+Token Embeddings：将句子划分为token后进行embedding
+Segement Embeddings：使用数字对token所属句子进行标记，而后进行embedding
+Position Embeddings：按照token的顺序分配位置id（此处与transformer不一样），而后进行embedding
+三者相加作为Bert的input
+[seq]和[cls]
+
+septoken代表着句子之间的分割，为预训练中的NSP任务服务（但是个人理解实际上segment embedding和position embedding和该token没有任何关系，训练上就是当成了普通的token进行训练）
+clstoken在一定程度上反应输入句子的特征，可作为全局信息的聚合，可以为NSP和一些下游任务服务。网上说因为其在输入首位，可聚合全局信息（但是个人理解其实这种说法不太make sence，部分实验也证明了，也许使用其他位置的token的last hidden state进行下游任务应用也效果优良）
+个人理解：这两个token实际上应该可以进行去除，只不过目前开源的模型及权重都使用了这种结构，这两个token在这种训练模式下极大可能已经包含了一部分信息，除非可以重新进行pretrain，否则还是建议遵守这种格式
+
+
+
+
+	
+
+
+
+
+Pre-training
+
+	
+
+Bert的预训练以大量的无标注的自然文本资料为数据进行自监督学习，原论文中可分为两种任务进行：
+1、MLM（Masked Language Model），通过随机遮盖输入文本中的部分词汇，让模型基于上下文预测被遮盖的词，从而学习词汇的语义和上下文关系：
+
+属于Autoencoding(AE)方法，与Autoregressive(AR)方法按顺序（从左到右或双向）逐个预测下一个词不同，AE通过重构输入数据（如掩码词）学习上下文表示，利用transformer的双向注意力机制，同时参考左右上下文预测
+原论文掩码策略：80%概率替换为[MASK]，10%概率替换为随机词，10%概率保留原词
+除了原论文的MLM外，还有WWM(Whole Word Mask)、N-gram Mask等掩码方案
+
+2、NSP（Next Sentence Prediction），判断两个句子是否在原文中连续出现，训练模型理解句子间逻辑关系（如因果、转折）：
+
+构造样本：尽量使得正负样本处于1:1的分布
+而后将cls所在token的向量输入到一个linear model中进行二分类任务
+
+
+
+
+如何应用Bert
+可分为四种方法：
+
+在大量通用语料上训练一个Bert（Pretrain）（一般使用开源的预训练模型）
+在大量应用领域通用数据集上继续训练Bert（Domain transfer）
+在小量应用具体任务强相关的数据集上继续训练Bert（Task transfer）
+在小量应用具体任务强相关的数据集上直接进行任务（Fine-tune）
+
+一般而言，Domain transfer+Fine-tune的形式能够取得最佳的效果
+
+
+
+参考资料
+
+《BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding》
+【BERT从零详细解读，看不懂来打我】 https://www.bilibili.com/video/BV1Ey4y1874y/?share_source=copy_web&amp;vd_source=a7945018d35cf6efabcda5a3ae66fca6
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Self-attetion &amp; Cross-attetion</title>
+    <url>/2025/07/28/attention/</url>
+    <content><![CDATA[下面简单记录一下Self-attention和Cross-attention。
+Self-Attention
+Scaled Dot-Product Attention（缩放点积注意力）演示图如下：
+
+	
+
+而Self-Attention允许模型在处理一个输入序列时，关注序列内部的每个元素之间的关系。每个元素既作为查询（Query），又作为键（Key）和值（Value），通过计算自身与其他元素的相关性来更新表示：
+
+	
+
+
+
+
+Cross-Attention
+Cross-Attention用于建模两个不同序列之间的关系。一个序列提供查询（Query），另一个序列提供键（Key）和值（Value），它通常用于需要融合来自不同数据源或模态的信息的任务。
+在 Transformer Decoder中，查询来自目标语言序列，键-值来自源语言序列（如将“Je t’aime”翻译为“I love you”时对齐“aime”和“love”）。
+
+	
+
+
+
+
+参考资料
+
+https://blog.csdn.net/qq_41990294/article/details/147746522
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>LLM解码策略</title>
+    <url>/2025/08/06/decode/</url>
+    <content><![CDATA[Introduction
+**模型解码（decoding）**指的是模型在生成文本时，模型会根据前面的内容预测下一个最可能出现的 token，直到满足终止条件（比如达到最大长度或遇到结束符 ）。
+解码策略决定了模型如何从多个候选token中做出选择，不同策略在不同情况下带来的效果是不尽相同的。假设模型已经生成了前n-1个token：x1、x2、...、xn-1，概率分布：P(x|x1、x2、...、xn-1)描述了模型在已生成文本的基础上选择某个 token的可能性，解码策略的关键就在于如何从这个概率分布中选择最合适的token。
+
+
+
+Temperature
+解码中通过引入一个大于0的温度参数，来控制概率分布的平滑程度。当温度等于1时，没有变化；当温度小于1时候，概率分布变得更激进，高概率和低概率变得更为两极分化；而当温度大于1时，概率分布则变得“温和”，对于低概率分布token更为包容，而对于高概率分布token也没有那么偏爱了。
+Pτ(x∣x&lt;t)=P(x∣x&lt;t)1/τ∑x′P(x′∣x&lt;t)1/τP_{\tau}(x|x_{&lt; t}) = \frac{ P(x|x_{&lt; t}) ^{1/\tau}}{\sum\limits_{x&#x27;}  P(x&#x27;|x_{&lt; t}) ^{1/\tau}} 
+Pτ​(x∣x&lt;t​)=x′∑​P(x′∣x&lt;t​)1/τP(x∣x&lt;t​)1/τ​
+
+
+
+Decoding Method
+Greedy Search
+贪心解码的原理非常简单，即每一步都选择概率最高的token作为下一个生成的token：
+x^t=argmaxxP(x∣x&lt;t)\hat{x}_t = argmax_x P(x|x_{&lt; t}) 
+x^t​=argmaxx​P(x∣x&lt;t​)
+优点：生成的文本通常会较为确定，计算速度快，适合实时生成。
+缺点：
+
+容易陷入局部最优：只选每步概率最高的词，可能错过整体概率更大的序列；
+生成结果单调、缺乏多样性：重复或缺少创造性表达；
+忽略全局上下文，只关注当前一步最优。
+
+
+Random Sampling
+随机采样则从当前给出的概率分布中随机选择一个token作为生成结果：
+x^t∼argmaxxP(x∣x&lt;t)\hat{x}_t \sim argmax_x P(x|x_{\lt t})
+x^t​∼argmaxx​P(x∣x&lt;t​)
+优点：生成的文本更加随机，带来更多的想象力和创造性，可用于一些创造性文本的生成、开阔性思维的生成。
+缺点：
+- 不稳定，易生成无意义或不连贯文本，因为可能采样到概率很低的词；
+- 生成质量波动大，可能出现语法错误或语义跳跃。
+
+Top-K Sampling
+Top-K策略先选取概率分布最高的k个token，再在这k个token中随机选取一个作为最后的生成结果：
+V(k)={x∣x∈TOPK}V^{(k)} = \{x | x \in TOPK\}
+V(k)={x∣x∈TOPK}
+P′(x∣x&lt;t)={P(x∣x&lt;t)1/τ∑x′∈V(k)P(x′∣x&lt;t)1/τ,if x∈V(k)0,otherwiseP&#x27;(x \mid x_{&lt; t}) = 
+\begin{cases}
+\displaystyle\frac{P(x \mid x_{&lt; t})^{1/\tau}}{\sum_{x&#x27; \in V^{(k)}} P(x&#x27; \mid x_{&lt; t})^{1/\tau}}, &amp; \text{if } x \in V^{(k)} \\
+0, &amp; \text{otherwise}
+\end{cases}
+P′(x∣x&lt;t​)=⎩⎨⎧​∑x′∈V(k)​P(x′∣x&lt;t​)1/τP(x∣x&lt;t​)1/τ​,0,​if x∈V(k)otherwise​
+x^t∼argmaxxP′(x∣x&lt;t)\hat{x}_t \sim argmax_x P&#x27;(x|x_{&lt; t}) 
+x^t​∼argmaxx​P′(x∣x&lt;t​)
+优点：结合了概率分布的可靠性和随机采样的随机性，能够保证在一定合理范围内增加生成的多样性。
+缺点：
+
+对k的设置很敏感， k过大过小都不合适;
+K值是固定的。有时候概率分布很平坦，需要一个很大的K值才能包含所有合理的选项；有时候概率分布很集中，可能前2个词就占了99%的概率，此时一个大的K值反而会纳入不必要的词。
+
+
+Top-P Sampling
+按照概率分布从大到小进行排序，找到最小集合V(p)，使得其中的token的概率和大于等于某个阈值：
+∑x∈V(p)P(x∣x&lt;t)≥p\sum_{x \in V^{(p)}} P(x|x_{\lt t})\ge p
+x∈V(p)∑​P(x∣x&lt;t​)≥p
+对V(p)中的概率进行重新归一化：
+P′(x∣x&lt;t)={P(x∣x&lt;t)1/τ∑x′∈V(p)P(x′∣x&lt;t)1/τ,if x∈V(p)0,otherwiseP&#x27;(x \mid x_{&lt; t}) = 
+\begin{cases}
+\displaystyle\frac{P(x \mid x_{&lt; t})^{1/\tau}}{\sum_{x&#x27; \in V^{(p)}} P(x&#x27; \mid x_{&lt; t})^{1/\tau}}, &amp; \text{if } x \in V^{(p)} \\
+0, &amp; \text{otherwise}
+\end{cases}
+P′(x∣x&lt;t​)=⎩⎨⎧​∑x′∈V(p)​P(x′∣x&lt;t​)1/τP(x∣x&lt;t​)1/τ​,0,​if x∈V(p)otherwise​
+从归一化后的token中随机采样：
+x^t∼argmaxxP′(x∣x&lt;t)\hat{x}_t \sim argmax_x P&#x27;(x|x_{&lt; t})
+x^t​∼argmaxx​P′(x∣x&lt;t​)
+优点：相较于Top-K更为灵活，能够自动根据概率分布调整候选集大小。
+缺点：
+
+计算复杂度较高，需要排序和累积概率计算；
+阈值仍然选择敏感，过小丢失多样性，过大可能导致生成质量下降；
+仍可能生成不连贯内容，尤其在模型概率分布不准确时。
+
+
+Beam Search
+束搜索每一步保留 top-k 个候选序列：
+Pbeam(yt∣y&lt;t,x)={exp⁡(log⁡P(yt∣y&lt;t,x)/τ)∑y′∈Btexp⁡(log⁡P(y′∣y&lt;t,x)/τ),yt∈Bt0,yt∉BtP_{\text{beam}}(y_t \mid y_{&lt;t}, x) = 
+\begin{cases}
+\displaystyle\frac{\exp(\log P(y_t \mid y_{&lt;t}, x) / \tau)}
+{\sum_{y&#x27; \in \mathcal{B}_t} \exp(\log P(y&#x27; \mid y_{&lt;t}, x) / \tau)}, 
+&amp; y_t \in \mathcal{B}_t \\
+0, &amp; y_t \notin \mathcal{B}_t
+\end{cases}
+Pbeam​(yt​∣y&lt;t​,x)=⎩⎨⎧​∑y′∈Bt​​exp(logP(y′∣y&lt;t​,x)/τ)exp(logP(yt​∣y&lt;t​,x)/τ)​,0,​yt​∈Bt​yt​∈/Bt​​
+其中 Bt\mathcal{B}_tBt​ 是在第 ttt 步的候选序列， S\mathcal{S}S：
+Bt=arg⁡max⁡S⊆V∣S∣=k∑y∈Slog⁡P(y∣y&lt;t,x)\mathcal{B}_t = \underset{\substack{\mathcal{S} \subseteq \mathcal{V} \\ |\mathcal{S}| = k}}{\arg\max} 
+\sum_{y \in \mathcal{S}} \log P(y \mid y_{&lt;t}, x)
+Bt​=S⊆V∣S∣=k​argmax​y∈S∑​logP(y∣y&lt;t​,x)
+下一步则在候选序列的每一个选择基础上继续保留 top-k 个候选序列，最后达到终止符或者最大长度会形成若干条路径，选择得分最高的路径。
+优点：考虑到全局的信息，能够生成更流畅和高质量的内容，适用于机器翻译等任务。
+缺点：
+
+计算资源消耗大，尤其束宽度大时搜索空间大；
+容易生成缺乏多样性、重复内容，因为只选概率最高路径，导致结果单一；
+束宽度过小效果类似贪心解码，过大则增加计算且未必提升质量；
+偏向短序列，因总概率乘积或累积对长度敏感。
+
+
+Speculative Decoding
+也称投机解码，是Google、DeepMind在2022年发现的大模型推理加速方法，这种方案需要两个模型一个是主模型(Target model)， 一个是轻量模型（Draft Model），这里的轻量模型可以用蒸馏/量化的方式得到与主模型相似的输出分布。
+轻量模型体量小，生成token耗时少，主模型只需负责验证轻量模型的输出即可，避免大模型做多轮预测输出，导致大量耗时，生成主要流程如下：
+
+由轻量模型在前文T_pre的基础上生成n个候选token；
+将这n个候选token合并在前文后面，成为一个新的输入T_new；
+将T_new输入到主模型进行一次forward，得到n个候选位置处的概率（这里算的是一次forward的hidden state，不要与generate后文n次混淆），此处为并行计算，耗时能够减少1/2左右。
+
+**投机解码接收逻辑：**对于某个token而言，令Q为轻量模型得到的概率，P为主模型forward后输出的概率，生成一个随机的阈值，如果P/Q大于某个阈值，说明主模型对于轻量模型生成的结果甚至更有自信，说明无需更改即可被接受。
+**投机解码拒绝逻辑：**如果验证当前token时，P/Q没有超过阈值，说明主模型对这个token没那么自信，则主模型以P/Q的概率接收当前token，1-P/Q的概率拒绝这个token。
+而后如果轻量模型生成的k个结果都满意的话，则使用主模型采样下一个token，结合这k个token一起作为结果输出；如果对于第n+1个token不满意，这时候需要创造一个新的分布p'(x)=norm(max(0, pn+1(x)-qn+1(x)))，这里先计算差分，结合max函数，将那些轻量模型比主模型更为自信的token所在的概率变为0，而主模型更为自信的地方则是正数，使得轻量模型过于自信的token被削减，最后归一化后进行第n+1个token的重采样，后续token全部丢弃，下一轮继续由轻量模型生成新的候选序列。
+投机解码优化措施
+在投机解码中，轻量模型生成的token接受率深刻受到了该模型与主模型分布一致性的影响，优化轻量模型的分布是投机解码进行优化的核心问题之一：
+
+DistillSpec（Distilled Speculative Decoding）：基于蒸馏学习从主模型中蒸馏出轻量模型
+SSD（Self-Speculative Decoding）：自动选择主模型中的部分层（如前几层）作为轻量模型，无需重新训练
+OSD（Online Speculative Decoding）：长期使用后，可能用户的需求不再和轻量模型的分布匹配，OSD能够在线动态调整轻量模型，具体的，线上运行时记录哪些 token 被主模型拒绝，用这些数据对草稿模型做在线蒸馏，使其逐渐适应新数据分布
+PaSS（Parallel Speculative Sampling）：让主模型自己充当轻量模型的角色，自己生成草稿。具体的，在输入序列的基础上构造训练是的鳄lookahead token序列，如&quot;The capital of France is [MASK] [MASK] [MASK]&quot;，进行一次forward后预测得到三个token，剩下的步骤与常规投机解码大体一致
+REST（Retrieval-Enhanced Speculative Decoding）：事先准备了大量高质量的对话片段和相关上下文对，向量化存储在检索库中，系统将当前用户上下文转成向量，去检索库中找最相似的上下文，直接把这段“回答”作为草稿 token 序列，主模型对检索得到的草稿 token 进行验证
+SpecInfer：可以使用一个或者多个SSM(Small Speculative Model)生成不同的候选序列，而后将这些序列构成一棵树，每层代表同一个位置的多个可能 toke主hu模型用专门设计的“树形注意力机制”同时对树中所有路径的 token 进行概率计算（前向传播一次完成多条序列验证），而不是一条条串行验证。对所有路径中符合大模型预测概率较高的分支，批量接受对应的 token，提升推理吞吐；对概率较低或大模型不认可的分支进行剪枝，减少无效计算
+Medusa：在大模型基础上添加多个微调头，每个头专门生成一个未来token，利用这些头并行生成多个草稿序列进行验证
+Eagle：轻量模型是一个同构的轻量LLM，其中Embedding层和LM Head层均复用原始LLM模型，中间的One Auto-regression Head(简称 AR Head)为由一层FC层以及一层Transformer Layer组成。AR Head是唯一需要微调的网络层，训练成本也是极低。使用 轻量模型通过自回归采样方式生成草稿，并且为了提升接收率，在运行AR Head前会融合上一个Token的隐状态与当前Token的 Embedding层，并通过AR Head的FC层融合：[seq_length, hidden_size*2]-&gt;[seq_length, hidden_size]，轻量模型基于草稿树进行自回归生成
+
+另一方面研究侧重于设计更有效的草稿构建策略。传统的方法通常产生单一的草稿token序列，这对通过验证提出了挑战：
+
+Spectr：不只生成一条草稿，而是同时生成多条草稿序列（k 条），然后使用k-sequential并行交给大模型验证（多个候选序列作为一个batch输入）。
+SpecInfer：SpecInfer 通过 token tree（令牌树）结构来组织多个草稿序列，并引入 Tree Attention（树形注意力）验证机制，让大模型可以高效并行地验证多条候选路径（如果我们有多个草稿序列（多条分支），直接把它们拼接成一个长序列做普通自注意力，会浪费大量计算：前缀共享的部分会重复计算；还可能造成不必要的信息交叉（不同分支不应互相影响），每个token只与其所在分支的祖先节点或共享前缀节点计算注意力）
+
+
+
+
+参考资料
+
+https://zhuanlan.zhihu.com/p/716344354
+https://www.cnblogs.com/rossiXYZ/p/18837229#534-优化
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>文本嵌入模型-GTE</title>
+    <url>/2025/07/09/gte/</url>
+    <content><![CDATA[提出背景
+
+现在多数文本嵌入模型都是针对特定任务进行训练（如STS和检索任务），泛化性不足
+大规模预训练依赖于私有数据，开源性和可复现性差
+模型参数量大，计算复杂度高
+
+
+
+
+模型结构
+GTE使用与SBert相似的基于transformer的双塔结构（dual-encoder）：
+
+	
+
+输入给定文本x，经过语言模型的处理后输出上下文表示向量，而后对这些输出的向量进行平均池化得到文本的最终表示向量：
+
+	
+
+
+
+
+损失函数
+文章中使用余弦相似度衡量两个文本向量的相似度，同时使用一个温度系数τ对相似度的尖锐程度进行调整：
+
+	
+
+
+	
+
+文章还对传统的InfoNCE损失函数进行了优化：
+
+传统的InfoNCE函数只考虑了对比正样本和同一批次内的负样本，拉近正样本对的向量距离，推开负样本对。此时负样本仅来自同一批次的文档，数量有限；同时同一批次样本的其他查询也可以利用作为负样本。
+优化后的InfoNCE函数扩展负样本池，引入同一批次内的所有查询和文档作为负样本，提升训练效率。批次数据大小为N，负样本数量从N-1扩大到2N-1。
+优化后的损失函数既增加了负样本的数量，也更好地学习到了文本之间的语义不相关性
+
+
+	
+
+
+
+
+模型训练
+训练分为两个阶段进行，两个阶段均采用对比学习，使用改善后的InfoNCE损失函数进行训练
+预训练：
+
+采用无监督预训练的方式，使用各种领域的与文本相关性有关的开源数据
+由于不同来源的数据量显著不同，文章使用多项式分布对不同数据源的数据进行采用，同时保证同个batch里的数据都是来源于同个任务，从而防止模型通过学习到不同任务特性来判断这些数据。同时，由于缺乏hard negative信息，为了保证模型能够学习到正负样本的边界，需要使用较大的batch size
+
+微调：
+
+以少量的人工标注的数据集为基础，利用额外的检索器获得相应的hard negative数据，从而构造出相应的文本相关性三元组（query, positive document, negative document）数据
+在finetune阶段，由于数据集原本的强监督信息跟hard negative，batch size不必设置的特别大
+
+
+
+
+PS：
+
+对于句向量而言，使用预训练跟微调两阶段训练得到的模型，相较于传统的只进行微调的方法明显在性能有很好的提升
+**个人理解：**当模型达到一定程度上时，在训练方法还是采用对比学习时，已经很难在微调阶段取得更大突破，这也许是因为基底模型本身能力所限制，因为很多基底模型本身就是针对基础语言任务训练的，跟基于句子级别的表征生成任务本身是有区别的，所以如果能针对句子表征生成任务做针对性的预训练，就能进一步提高基底模型的上限，从而提升模型整体表现
+
+
+
+
+参考资料
+
+《Towards General Text Embeddings with Multi-stage Contrastive Learning》
+GTE(MTEB Top2)的成功秘诀–大力出奇迹 - 泽龙的文章 - 知乎
+https://zhuanlan.zhihu.com/p/652472924
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>关于FFN与Add &amp; Norm的一些学习与思考</title>
+    <url>/2025/07/31/ffnaddnorm/</url>
+    <content><![CDATA[FFN（Feed-forward Network）
+Transformer中的FFN实际上就是由线性层fc+relu激活函数+线性层fc的结构组成，论文中作者提出，attention输出的embedding维度为512，ffn将输入从512升维至2048，而后经过激活后又降维至512。
+
+	
+
+个人理解，FFN的引入主要有四个作用：
+语义强化
+每个神经元可以视作一个简单的分类器，用以近似输入数据的高维映射 通过升维，原始的输入被扩展到了高维度空间，能够学习到更丰富的信息与特征，而后又进行降维，将学习到的信息重新进行压缩，提取更精确的表达。第一层中，每个神经元可以视作一个简单的分类器，用以近似输入数据的高维映射（从一维卷积的角度看，升维可以提取更多的特征）。由此可见，虽然输入输出维度没有变化，但是后者所蕴含的信息多于前者。
+
+增强表达
+通过relu的运算，为embedding引入了非线性信息，如果没有 FFN 层的存在，Transformer 模型可能会退化为简单的线性变换模型，从而失去捕捉复杂特征的能力。FFN层保证了模型能够保持其表达能力，有效捕捉到输入数据中的复杂特征。
+
+知识存储
+一个很有趣的类比方法，比如512-&gt;2048升维后，相当于在记忆仓库中有2048个潜在的知识槽位（类比一个巨大的哈希表），每个神经元具有多义性可能存储一组稀疏特征，经过relu稀疏激活后（大部分激活为0或者输出接近0），选择了关键的几个知识槽位，而后再使用线性层对这些选出的知识进行加权压缩。相当于fc1学习key，fc2学习value。
+
+增大参数量
+大模型具有涌现现象，当模型规模（参数量、训练数据量、算力）达到一定阈值后，模型会突然表现出一些在小模型上完全没有、甚至无法预期的新能力，而这些能力不是通过线性外推规模就能得到的。这是一种非线性、阈值式的性能跃迁。引入FFN，能够避免参数稀疏问题，RNN、CNN这类结构都具有参数共享的机制，在这种大规模模型上反而成了问题。此外，不考虑embedding层，一个transformer架构的模型里，FFN和Attention参数占据了模型参数的绝大部分，基本上超过了 90%。其中FFN和Attention 参数量比例接近 2:1。
+
+
+
+Add &amp; Norm
+在Transformer中，add &amp; Norm主要体现在output=Norm(x+MHA/Masked−MHA(x))output = Norm(x + MHA/Masked-MHA(x))output=Norm(x+MHA/Masked−MHA(x))、output=Norm(x+FFN(x))output = Norm(x + FFN(x))output=Norm(x+FFN(x))这几个部分。
+Add的作用
+缓解梯度爆炸/消失
+让梯度有一条直接从上层流到下层的通路，避免深层网络训练困难，这也是为什么大模型能够通过transformer堆叠从而实现大规模参数架构训练。
+保留原始信息
+如果如果子层MHA(x)、FFN(x)训练不理想，可以继续依赖x进行训练，这里网络学习的是增量变化，而不是没有残差结构时的持续重建（这里很好的体现了残差的概念），子层也只需要学习对原信息的小幅度修正，结合原信息的传入两者相加便能得到很好的训练效果。
+
+Norm的作用
+解决内部协变量偏移
+Internal Corvariate Shift，ICS是一个需要关注的问题，随着DNN的不断加深，随着参数的更新每一层的输出与其输入的分布都会产生差异，而随着层数的变大，这样的差异似乎也随着蝴蝶效应而变大。由于P(Y|Xt)与P(Y|Xt-1)相同，但是P(Xt)和P(Xt-1)却具有一定差异，这使得顶层网络需要不断去适应这样的变化，造成了模型的学习困难（记得曾经一开始学习时按照googlenet原论文手搭网络进行training，acc只有11%多，后面发现没有加bn… 加了若干bn之后就可以正常训练了）。
+ICS通常会导致以下几个问题：
+
+统计机器学习中的一个经典假设是源空间（source domain）和目标空间（target domain）的数据分布是一致的，而产生ICS后，输入不再为独立同分布，网络需要不断去适应分布的变化，导致训练时间增长，训练产生困难（相当于需要不断进行domain transfer，这显然是个麻烦的问题）；
+随着网络层数的增加，通过多层的计算后数据分布的多变不受控制，可能导致很多数据落入梯度饱和区，使得收敛速度变慢 。
+
+传统方法使用白化进行处理，处理后的数据具有特征之间相关性较低、所有特征具有相同的方差的特点，但是具有两个缺点：
+
+计算量大（pca）；
+强行消除特征之间的相关性，网络表征空间的学习被破坏。
+
+归一化即对某层的输入进行平移+伸缩变化，使其满足标准正态分布，这样在这一层的输入处，所有数据的输入分布得以稳定，满足了独立同分布的特性，也具有去除一些噪声的作用。
+
+
+
+归一化的分类（个人理解）
+一般而言，就会根据具体的任务使用不同的归一化方案，归一化方案的不同代表着我们要在哪一个维度进行归一化，也就代表着要把哪一个维度的信息损失掉一部分信息，从而进行相似化。
+Instance Normalization，IN
+常用于风格迁移、图像生成任务，例如使用CycleGAN进行图像风格迁移就是使用的IN。我们都知道一张RGB图像由空间维度和通道维度组成（H * W * C），一般各个通道的分布代表了这张图像的“风格”，换句话说，也就是各个通道的均值与标准差代表了“风格”。那么对于各个通道进行归一化，即消除了这张图像的风格，保留了内容与框架，更容易进行其他风格的迁移。
+
+Batch Normalizaition，BN
+常用于通用的计算机视觉任务（识别、检测、分割、超分辨…）。与IN不一样的，IN不考虑B的原因则是为了抛弃其他图像风格带来的干扰。而BN将batch维度考虑了进来，类似于识别这类任务，需要捕捉整体的特征，因此对于每一个通道考虑(B,H,W)的信息进行归一化，相当于BN同样是在通道C维度进行归一化，却没有完全像IN那样完全去除一张图片的风格特征，而是在对batch中的图像风格进行平均化。
+
+Layer Normalization，LN
+常用于NLP任务。如果输入的为图片(B,C,H,W)，对于每一个样本在(C,H,W)上进行归一化，即对每个样本的所有特征进行归一化，完全不考虑其他样本。对于nlp任务而言，(batch_size, max_seq_len, vec_dim)和CV的(N,C,H,W)对应关系为：max_seq_len ⇒ H*W、vec_dim ⇒ C但是在CV中LayerNorm标准化(C,H,W)，而NLP中标准化(vec_dim,)，nlp中BN具有以下缺点：
+
+batch size一般较小，mini-batch情况下bn的全局统计信息不准确
+NLP中同一个batch不同句子的某个位置的特征没有可比性：句子1第3个token的语义和句子2第3个token的语义通常不同（词不同、上下文不同）
+
+为什么只对vec_dim维度进行归一化呢？
+NLP中同一个batch的句子长度不一，不同句子长度差异导致padding，padding部分是无效数据。另外，也是因为同一个seq中，不同的token间存在强相关信息，不适合进行iid假设，会严重影响训练效果。
+layernorm的必要性
+Transformer中token表示会不断叠加其他token信息（attetion），这个加权和受上下文token数量和特征值大小影响，不可控，高维向量中，每个维度的小波动可能在叠加后产生较大的整体偏移不同层的累积叠加容易让embedding“跑远”，导致分布不稳定。因此，在transformer这种embedding维度十分大的场景下，LN能够把尺度拉回稳定范围，防止向量漂移太远。
+
+Group Normalization, GN
+是一种LN与IN折中方案，将通道C分为G组，每一组通道内进行归一化。在BN中统计的是整个batch中同一个通道的均值和方差，即跨样本统计。当batch很小时（尤其 batch=1），统计量非常不稳定，所以BN必须依赖大batch才能保证稳定的统计量和训练效果。而GN不依赖batch，且保留了组间的一定差异，适合用于mini-batch情况下需要保留一定通道特征差异的情况。
+为什么work?
+每一层有很多的卷积核，这些核学习到的特征并不完全是独立的，某些特征具有相同的分布，因此可以被group，当然，在NN中这些分组的条件很难人为进行捕捉，不那么直观
+
+个人对于BN、IN、GN共同性的思考
+在CNN中，一个通道的所有特征图均由同一个卷积核产生，因为我们希望不同图像，图像不同位置用这个卷积核执行卷积以后的数据分布是稳定的，所以需要在各个通道维度执行归一化（通俗点说，对于一个通道而言，每一个像素P_{bi,hj,wk}都是由相同的卷积核卷积而成，这些像素在分布上可被近似为独立同分布，于是在这个通道维度上进行归一化能够在损失信息较小的情况下削弱ICS），当然，对于H*W是一定要进行归一化的，而对于batch的考虑以及通道分组的考虑就是另外引入的考虑了。
+
+RMS Normalization（Root Mean Square Layer Normalization）
+目前很多LLM采用了RMS Normalization用来替代传统的LayerNorm函数。
+对于一个词向量进行LN时候，具有两个特性：
+
+平移不变性（Translation invariance）：对输入特征减去均值，实现均值为零，消除输入偏置；
+缩放不变性（Scale invariance）：对输入除以标准差，实现标准差为一，保证特征尺度一致。
+
+研究者发现，LN之所以work不是因为其平移不变性而是因为缩放不变性，因此RMSNorm去除了减去均值的平移步骤，只保留了对输入特征进行缩放的操作，使用平方均值对向量进行归一化，这样具有以下好处：
+
+省略去中心化计算和平移操作，在高维大批量数据中能节省不少计算时间
+在实际应用中，RMS Norm和LN效果差不多，但是计算效率增长，训练更快
+
+
+
+
+参考资料
+
+https://zhuanlan.zhihu.com/p/30580480776
+https://www.cnblogs.com/jins-note/p/11342565.html
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Sentence Bert</title>
+    <url>/2025/07/01/Sbert/</url>
+    <content><![CDATA[提出背景
+在文本相似性任务（Semantic Textual Similarity, STS）中，使用Bert进行句子语义信息计算有以下两个问题：
+1、需要将两个句子拼接输入网络，此时如果对1w个句子进行两两之间的相似度判别时，需要计算5000w次，花费65小时，计算耗时巨大
+2、Bert主要使用两种方式进行语义信息提取：
+
+使用clsToken对应的向量作为句子的平均语义信息
+使用每个Token的平均向量作为句子的平均语义信息
+实验结果表明，使用原始Bert进行向量表示在文本相似度任务中效果并不好
+
+
+	
+
+Bert主要使用两种方式进行语义信息提取：
+
+使用clsToken对应的向量作为句子的平均语义信息
+使用每个Token的平均向量作为句子的平均语义信息
+实验结果表明，使用原始Bert进行向量表示在文本相似度任务中效果并不好
+
+
+	
+
+
+	
+
+
+
+
+模型结构
+SBert的结构包含孪生网络（Siamese Network）和三胞胎网络（Triplet Network）。孪生网络分为双塔，两个塔模型完全相同且共享参数，两个句子通过两个模型计算得到相似度后，再进行梯度反向传播，原论文中，分为两种STS子任务——分类和回归：
+
+	
+
+
+分类：判断两个句子是否相似，将两个句子以及两个句子的绝对差拼接在一起，输入一个Softmax分类器。至于为什么要采用这种拼接方式，原论文采用的基于实验的经验式方法讨论，在结果上该方案效果最好
+回归：输出两个句子的余弦相似度，损失函数使用最小均方误差（MSE），输出的值范围在[-1, 1]。文章将SBert与基础的Bert以及Spearman这种Non-Parametric的方法进行对比
+
+
+	
+
+对于Pooling层，文章也进行了讨论，分为三种Pooling方式：
+
+CLS：使用clsToken作为最终的句子向量进行Pooling
+MEAN：使用所有Token的平均值作为最终的句子向量进行Pooling
+MAX：使用所有Token的最大值作为最终的句子向量进行Pooling
+文章中的实验证明，使用MEAN的方法进行Pooling效果最好
+
+
+	
+
+此外，文章中也提出了一种三胞胎模型，任务为给定句子a，一个正向的句子p，一个负向的句子n，使用Euclidean Distance进行距离评估，模型需要使得p与a的接近程度需要在一定阈值的程度上大于n与a的接近程度，文章中将该阈值设为1
+
+	
+
+
+
+
+参考资料
+
+《Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks》
+【SentenceBert模型：文本语义去重】 https://www.bilibili.com/video/BV13h4y1a7z6/?share_source=copy_web&amp;vd_source=a7945018d35cf6efabcda5a3ae66fca6
+Sentence-BERT（SBERT）模型介绍及Sentence Transformers库的使用 - Cheer-ego的文章 - 知乎
+https://zhuanlan.zhihu.com/p/659682364
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>CoT - 《Chain-of-Thought Prompting Elicits Reasoning》 in Large Language Models</title>
+    <url>/2025/12/06/cot/</url>
+    <content><![CDATA[Abstract &amp; Introduction
+近年来，扩大LLM的规模已被证明带来了一系列好处，例如性能提升和样本效率提高。然而，仅仅扩大模型规模还不足以在算术、常识和符号推理等具有挑战性的任务上取得高性能。
+通过生成通向最终答案的自然语言有益于提升这种推理能力，意味着模型在得出答案前需要输出中间的推理步骤，例如Q：1 + 1 = ?，模型并不直接输出2，而是进行思考：
+
+因为1 + 1 = 2；
+所以最终答案为2。
+
+在这之前，相关的研究主要分为两类：
+
+提供中间推理步骤的训练，这类方法需要大量人工标注推理步骤，成本极高；
+few-shot prompting，类似GPT-3这种few-shot prompting的方法，面对需要推理的任务表现很差，且随着模型规模增加也不会明显变好。
+
+文章结合两种方案的优势，引入模型的CoT，Chain Of Thought(思维链)，具体演示如下图所示，即在推理时给定一个(input, CoT, output)三元组，使用纯prompting的方法增强模型的推理能力。
+
+	
+
+这种纯prompting的方案既没有高昂的训练成本，也不会因为训练导致模型损失任务性能。当模型规模足够大（例如百亿至千亿参数时），只需要给几个CoT示例，它就能模仿这种推理方式，并表现出明显更高级的推理能力，相比于一些专门进行微调的模型在推理任务上展现出了优异的性能表现。
+
+
+
+Chain-of-Thought Prompting
+作为一种提升模型推理能力的方法，CoT有以下几个优势：
+多步骤问题的拆解
+不使用CoT的情况下，模型基于这种“给出答案”的任务要求，对于单步骤推理任务和复杂的多步骤推理任务都是“一步到位”。
+而CoT则能够对于多步骤的复杂推理任务进行步骤拆分，直观来看增长了这类任务的上下文长度和推理时长，实现了一种根据“推理任务的复杂程度”来适应地分配推理资源的功能。
+
+可解释性
+CoT下的模型输出提供了一个可解释的中间过程，虽然这并不能完全揭示模型内部的机理，但是能显示模型是如何得出某个答案的，并为定位推理路径中的错误提供机会。
+
+通用性
+根据CoT这种“要求模型先推理后得到答案”的任务特性，能很好地用于数学应用题、常识推理、符号操作等任务，并且理论上可能适用于任何人类能够通过语言推理解决的任务。
+
+便捷性
+在足够大的现成语言模型中，只需使用few-shot prompting的方式在模型输入中加入少量的CoT示例，就可以增强模型的推理能力。
+
+
+
+Arithmetic Reasoning
+实验设置
+作者在数学推理任务（Arithmetic Reasoning）上对CoT的效果进行测试，选取了5个相关的数据集：
+
+GSM8K 基准（数学应用题）；
+SVAMP 数据集（结构多样的应用题）；
+ASDiv 数据集（多样性数学应用题）；
+AQuA 数据集（代数应用题）；
+MAWPS 基准。
+
+
+	
+
+作者为这5个数学相关任务生成了8个CoT模板案例，具体如下图所示：
+
+	
+
+将CoT prompting方案与传统的few-shot prompting方案（Q -&gt; A）进行对比，选取了5种不同的模型作为载体：
+
+GPT-3（选择Instruct微调后的模型：ada 350M, babbage 1.3B, curie 6.7B, davinci 175B）；
+LaMDA（422M, 2B, 8B, 68B, 137B）；
+PaLM（8B, 62B, 540B）；
+UL2 20B；
+Codex（代码任务优化后模型：code-davinci-002）。
+
+
+实验结果
+下图为相关实验结果：
+
+	
+
+根据实验结果能够得到三个主要结论：
+结论1
+结果揭示了：CoT Prompt是一种由模型规模所诱发的涌现能力。
+对小模型而言，CoT Prompt不会带来性能提升 只有当模型规模达到约 100B 参数级别 时，才会出现性能增益。
+作者定性地观察到，小规模模型生成的CoT虽然流畅，但在逻辑上不正确，导致其性能反而比标准Prompt更低。
+结论2
+CoT Prompt在更复杂的问题上带来的性能提升更大。
+例如对于 GSM8K（其基线性能最低的数据集），最大规模的 GPT 和 PaLM 模型的性能在CoT Prompt下提升了超过一倍，而对于 MAWPS 中“SingleOp”这种只需一步推理的简单问题集，性能提升很小甚至为负。
+结论3
+CoT Prompt下的 GPT-3 175B 和 PaLM 540B 的表现可以和以往最先进方法相比，甚至更优。而以往方法一般需要对模型进行任务特定微调并使用标注训练数据。
+图中显示，PaLM 540B + CoT Prompt 在 GSM8K、SVAMP 和 MAWPS 上达到新的 SOTA（注意标准 prompting 在 SVAMP 上已经超过了之前的最优方案），在 AQuA 和 ASDiv 上，PaLM 的表现比 SOTA 仅低 2%。
+为何CoT有效
+一、CoT反映了模型真实的推理过程，而非表层模仿
+作者对 LaMDA 137B 在GSM8K上生成的CoT进行分析，发现了如下现象：
+
+
+在答对的问题中，几乎所有CoT都逻辑严谨且数学正确 -&gt; 说明模型在按CoT逐步推理，而不是“瞎编理由”；
+
+
+在答错的问题中，有 46% 的CoT只包含轻微错误（如计算细节、符号映射或少一步推理）-&gt; 表明模型的推理结构是对的，只是执行中出错；
+
+
+剩余 54% 的错误CoT呈现语义理解偏差或逻辑断裂，这些是当前模型本身推理能力的瓶颈所在。
+
+
+二、模型规模进一步增强CoT的质量与稳定性
+对比 PaLM 62B 和 PaLM 540B 的错误模式发现，规模更大的模型能显著减少如下现象：
+
+缺少关键步骤的推理
+数量关系误解
+语义理解错误
+
+
+模型规模越大，其CoT越稳定、越完整、越符合逻辑。
+
+Ablation Study
+文中用三个消融实验说明了CoT对增强推理能力的重要性。
+Equation Only
+在给定答案前不使用CoT，而是直接写出要计算的数学方程，然后再给答案。
+结果显示，在 GSM8K 这类复杂语义题上，模型的推理能力几乎没有提升，只能在只需 1–2 步的简单数据集上有一点提升。
+这证明了自然语言推理链的语义拆解不可替代。复杂题目不能直接从题目语义映射到数学公式，必须借助自然语言一步步理解题意。
+Variable compute only
+前文提到，CoT间接提升了一些多步骤问题的推理时间，那是否不管什么形式只需要增加推理时间也能达到这种效果呢？
+在给定答案前，让模型输出一串dot tokens......，数量与解方程所需字符数相同，让模型花更多 token，模拟“更多推理”这个步骤。
+结果显示，这样做的效果与 baseline（普通 few-shot）几乎一样。这说明仅增加 token 和计算量并不能提升推理能力，模型需要的是“结构化的推理语义内容”，而不是单纯输出更多字符。
+Chain of Thought After Answer
+将CoT + 答案的形式反转为答案 + CoT的形式，目的是测试CoT是否只是“激活知识”，与推理顺序无关？
+结果显示效果与 baseline 基本一样，也起到了增强推理的作用。这其实听上去非常make sense，对于人类而言，不论是先给答案还是先给解题步骤，只要是两个信息都给了，人类就能够将其关联在一起培养推理能力。
+
+	
+
+
+Robustness of Chain of Thought
+为了验证CoT是否具有鲁棒性，而不是随着不同人不同风格的编写导致性能明显下降，实验找了三个人A、B、C，编写了三种不同风格的CoTACoT_ACoTA​、CoTBCoT_BCoTB​、CoTCCoT_CCoTC​，其中A还编写了一份简洁风格的CoT_{A, concise}，加起来一共四种不同的CoT模板。此外，GSM8K中也会含有带推理过程的数据，将其推理过程抽取出来作为CoT与答案进行拼接也作为一种不同风格的CoT。
+实验结果如下图所示，可以看见，不管是什么风格的CoT，都比标准的Prompt要效果更好。
+
+	
+
+
+
+
+Commonsense Reasoning
+作者测试了CoT在一系列常识推理数据集上的表现效果，实验结果如下图所示，证明CoT也可以提高在需要各种常识推理能力的任务上的性能，且随着模型规模的增大，这种能力会越发强大。
+
+	
+
+
+
+
+Symbolic Reasoning
+使用两种“toy task”来测试CoT在符号推理任务上的性能表现：
+
+最后字母拼接：取姓名中每个单词的最后一个字母进行拼接；
+硬币翻转：给定多次“flip / not flip”步骤后，判断硬币最终正反。
+
+具体的实验结果如下图所示。
+得到结论如下：
+标准Prompt vs CoT Prompt
+在标准Prompt下，大模型难以完成这些任务，尤其是多步推理；但使用CoT Prompt后，PaLM 540B 几乎达到了 100% 的正确率，说明CoT 让模型能够执行形式化、逐步、可编程的符号操作，不是浅层匹配；
+
+In-domain &amp; Out-of-domain
+CoT可分为In-domain和Out-of-domain两种情况，前者即给定的CoT Prompt模板的数据处理步骤和给定待输出结果的数据处理步骤一致，后者则不一致。例如在最后字母拼接任务中，给定的CoT Prompt中都是关于两个单词姓名的Amy Brown -&gt; yn，但是最后要输出推理结果的数据则是三个单词的。
+实验结果如下图所示，可以发现，标准Prompt完全失败，这样的Prompt提示下，模型并不会自动扩展规则。而CoT Prompt则可泛化到更长的CoT，且随模型规模增大，OOD 准确率显著提升。但是，100B 规模以下的模型难以对抽象符号进行泛化操作，即便CoT结构非常简单、规则明确。说明CoT 的效果依赖模型规模。
+
+	
+
+
+
+
+
+参考资料
+
+《Chain-of-Thought Prompting Elicits Reasoning in Large Language Models》
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>GPT-1技术报告阅读笔记</title>
+    <url>/2025/08/20/gpt1/</url>
+    <content><![CDATA[OpenAI由2018年介绍了一种名为“生成式预训练”（Generative Pre-Training，简称GPT）的新型语言模型，该模型通过在大规模语料库上进行训练，能够学习自然语言的模式和规律，从而实现更好的语言理解。
+模型结构
+GPT-1模型由12层transformer decoder组成，masked self-attention的hidden_state为768，MHA包含12个attention heads，FNN中间层会对768先进行升维至3072，参数量大小为117M。
+
+	
+
+
+	
+
+
+
+
+Pre-train
+作为一个自回归语言模型，GPT-1预训练使用前n个token预测后一个token的无监督预训练架构形式，进行自回归预训练。
+
+	
+
+在预训练阶段，GPT-1采用BooksCorpus数据集进行预训练，该数据集包含了大量不同类别的书籍，其中具有大量long-range信息。文章将大小大致相同的数据集ELMo进行比较，不同的是ELMo在句子层级上被打乱，丧失了long-range结构，模型在这个数据集上性能交叉，困惑度达18.4。
+
+	
+
+
+	
+
+预训练中的一些设置：
+
+使用Adam作为优化器；
+在前2000步中采用warmup将lr从0线性增加到最大值2.5e-4，而后则按照余弦函数的曲线逐渐下降为0；
+训练进行100个epoch，每一个minibatch包含64个样本，每一个样本长度为512个token；
+因为transformer中采用LN对输出分布进行稳定，所以权重可以初始化为简单的均值为0、标准差为0.02的正态分布；
+使用BPE作为tokenizer，缓和了OOV问题，通过40000次merge合并操作构建了这个词汇表，词汇表大小约为4万；
+在残差、embedding、attention等位置使用概率为0.1的dropout，同时还使用系数为0.01的L2正则化惩罚除bias和LN参数外的参数；
+使用GELU作为激活函数；使用可学习的位置编码；
+在数据预处理中，使用ftfy修复文本中的编码错误和怪异格式，统一标点和空格，最后使用spaCy工具进行初步的分词。
+
+
+	
+
+
+
+
+Post-train
+GPT-1使用有监督微调架构进行下游适配，给定带有标签的数据集，添加线性输出层进行，使用标准交叉熵损失函数进行微调，同时微调时引入如预训练环节中的辅助语言建模损失函数，提高泛化能力和加速收敛。
+
+	
+
+此外，对于不同的有监督微调任务，需要进行输入格式的转换，可分为文本分类、文本蕴含（判断一个前提Premise是否包含一个假设Hypothesis）、文本相似度、文本问答（给定一个上下文 z、一个问题 q 和一组候选答案 a1,a2,...,ak{a_1, a_2, ..., a_k}a1​,a2​,...,ak​，从中选出正确答案）等。
+由于gpt-1为自回归模型，是在连续句子上训练得到，对于某些需要句子对或者三元组的任务而言理解不足，gpt-1通过引入起止符和分割符将这种不连续的关系表示为了连续关系。对于具体如下图演示：
+
+	
+
+微调大部分超参数设置与预训练时一致，此外，gpt-1在classifier上添加了概率为0.1的dropout，且对于大多数任务，使用 6.25e-5的lr和32的batch size，在实际微调中，一般收敛较快，3个epoch已经足够；采用线性学习率衰减策略，并在前0.2%的update中进行Warmup；辅助语言建模损失的权重设置为0.5，尽量保留它从预训练中学到的通用语言知识。
+
+	
+
+
+
+
+参考资料
+
+《Improving Language Understanding by Generative Pre-Training》
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>GPT-2技术报告阅读笔记</title>
+    <url>/2025/08/20/gpt2/</url>
+    <content><![CDATA[Introduction
+GPT-2文章中指出了监督学习的核心弱点：脆弱性与敏感性，监督学习在训练数据分布上表现优异，但是数据分布一旦稍有变化，则性能急剧下降，这样训练出来的系统称为Narrow Expert，单任务单领域的训练范式无法进行举一反三的泛化功能。因此，文章主要宣传的是下游任务中Zero-shot的思想。
+
+	
+
+
+
+
+任务转换
+对于以往的单任务建模而言，任务框架可以被描述为对条件概率p(output|input)进行建模，而一个通用的系统应该能够执行多个任务，则应该以“task”为条件，即建模为p(output|input, task)。以往的多任务学习的实现方式通常体现在模型架构方面，为不同任务设计不同的架构，这种方式复杂、不灵活，且难以扩展。
+但是根据McCann等人在2018年的工作可知，自然语言本身就是一个极其灵活的元语言，可以用来指定任务、输入和输出，例如：
+
+翻译任务可以写成一个序列：translate to french, english text, french text
+问答任务可以写成：answer the question, document, question, answer
+
+所有的监督学习任务都可以被重新表述为一个“符号序列”。一旦做到了这一点，所有这些不同的任务都被“压平”到了同一个维度——预测序列中的下一个符号。那么从形式上而言，如果一个LLM很好地掌握了无监督语言建模，那么它也就很好地掌握了序列中蕴含的各类下游任务，可以看做语言建模任务的一个子集。
+但实际上在McCann等人的假设中，序列数据非常干净整洁，互联网上的数据并不如这样干净而是非常杂乱，而gpt-2认为在这种数据模式下，任务范式仍然存在，模型为了更准确地预测出这些文章后续的文本（比如，预测出步骤中的下一个词），它被迫去理解“提问”和“回答”之间的逻辑关系。为了更好地完成“预测下一个词”这个简单任务，它必须学会隐藏在文本深处的各种复杂任务，且初步小规模实验也证明了有效性，但是出现了训练慢的情况。那么多任务学习的目标就从模型结构设计转换到了工程上是否能实现这个问题：
+
+能否构建一个足够大的模型？
+能否收集足够多、足够多样的训练数据？
+能否有足够的计算资源（算力）来训练这个模型？
+
+
+
+
+Training
+Data
+OpenAI爬取了一个新的网络数据集，强调文档质量，只爬取了经过人类策展/筛选的网页。数据来自社交媒体平台 Reddit的所有出站链接，这些链接至少获得了3个karma（声望值），这可以被看作是一种启发式指标，用于判断其他用户是否认为该链接有趣、有教育意义或只是好笑，从而获取高质量的内容。
+同时，移除了所有来自Wikipedia的数据，因为维基百科中一般存在很多QA对的信息，会对Zero-shot产生影响。这个最终的数据集名为WebText，包含略超过 800 万个文档，文本总量为 40 GB。
+
+Tokenizer
+使用BPE进行分词，但是BPE会包含常见单词的许多变体，例如 dog, dog., dog!, dog?。这导致了对有限的词汇表位置和模型容量的次优分配。因此引入了约束：不允许BPE将属于不同Unicode类别（如字母、数字、标点符号、空格）的字节合并在一起，阻止跨类别合并。具体的流程：
+
+
+将文本编码为 UTF-8 字节序列；
+
+
+将每个字节映射为 Unicode 字符；
+
+
+使用 BPE merge rules 对字符序列进行合并。
+
+
+
+Model Structure
+沿用了gpt-1的transformer-based结构，但是进行了一些小改动：
+
+使用Pre-norm作为归一化方案，且在最终的自注意力层之后添加了一个额外的LN；
+防止残差叠加导致的梯度爆炸，初始化每个残差层权重时缩小一个因子 1/sqrt(N)，N为残差层个数；
+训练数据量增大，batch_size从 64 增加到 512，seq_length大小从 512 增加到 1024。
+
+文章对比了四种不同参数量的模型，最小的对标gpt-1，medium则对标BERT-large，最大的则是gpt-2，文章经过人工调整lr，使得各个模型在保留样本上都取得了各自的最小困惑度，但是显示仍然欠拟合，这证明当前的模型参数量仍然不足够，需要更大规模的模型，感觉这里已经出现了Scaling Law的雏形。
+
+	
+
+
+
+
+参考资料
+
+《Language Models are Unsupervised Multitask Learners》
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>llama.cpp编译过程中的cmake版本问题</title>
+    <url>/2025/07/29/llamacpp/</url>
+    <content><![CDATA[cmake版本问题
+今天在Orin NX上进行GPU版本的llama.cpp编译时，遇到了下述问题：
+cmake -B build -DGGML_CUDA=ON-- Warning: ccache not found - consider installing it for faster compilation or disable this warning with GGML_CCACHE=OFF-- CMAKE_SYSTEM_PROCESSOR: aarch64-- GGML_SYSTEM_ARCH: ARM-- Including CPU backend-- Found OpenMP_C: -fopenmp  -- Found OpenMP_CXX: -fopenmp  -- Found OpenMP: TRUE   -- ARM detected-- ARM -mcpu not found, -mcpu=native will be used-- ARM feature FMA enabled-- Adding CPU backend variant ggml-cpu: -mcpu=native CMake Error at ggml/src/ggml-cuda/CMakeLists.txt:1 (cmake_minimum_required):  CMake 3.18 or higher is required.  You are running version 3.16.3-- Configuring incomplete, errors occurred!See also &quot;/home/amov/Desktop/llama.cpp/build/CMakeFiles/CMakeOutput.log&quot;.See also &quot;/home/amov/Desktop/llama.cpp/build/CMakeFiles/CMakeError.log&quot;.
+具体原因是cmake版本过低，需要升级至&gt;=3.18版本，具体流程如下：
+
+首先在官网下载对应的二进制文件，我需要安装4.0.0版本，由于Orin NX为arm架构，这里我选择aarch64后缀的脚本：cmake-4.0.0-linux-aarch64.sh
+下载下来后，使用chmod +x cmake-4.0.0-linux-aarch64.sh给予可执行权限，然后使sudo sh cmake-4.0.0-linux-aarch64.sh进行解压（这里需要注意安装时的路径提示）
+记住安装路径后，export PATH=/&quot;your cmake path&quot;/bin:$PATH，我这里是export PATH=/home/amov/Desktop/cmake-4.0.0-linux-aarch64/bin:$PATH
+而后执行以便永久生效：
+
+echo &#x27;export PATH=/opt/cmake/bin:$PATH&#x27; &gt;&gt;~/.bashrcsource ~/.bashrc
+
+最后cmake --version检查是否升级成功
+
+参考：https://blog.csdn.net/u013172930/article/details/148203298
+]]></content>
+      <categories>
+        <category>Solution</category>
+      </categories>
+      <tags>
+        <tag>cmake</tag>
+        <tag>orin nx</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>关于深度学习中的优化器：Adam、AdamW、Muon、Shampoo</title>
+    <url>/2025/10/12/optimizer/</url>
+    <content><![CDATA[Adam（Adaptive Moment Estimation）
+Adam是一种自适应地优化算法，结合了Momentum和RMSProp的特点，在优化过程中自适应地调整优化的学习率，其组成部分主要分为一阶矩估计和二阶矩估计。
+一阶矩估计表示为mtm_tmt​，计算公式如下：
+mt=β1mt−1+(1−β1)∇θtL(θt)m_t=\beta_1m_{t-1}+(1-\beta_1)\nabla_{\theta_t}L(\theta_t)
+mt​=β1​mt−1​+(1−β1​)∇θt​​L(θt​)
+二阶矩估计表示为vtv_tvt​，计算公式如下：
+vt=β2vt−1+(1−β2)[∇θtL(θt)]2v_t=\beta_2v_{t-1}+(1-\beta_2)[\nabla_{\theta_t}L(\theta_t)]^2
+vt​=β2​vt−1​+(1−β2​)[∇θt​​L(θt​)]2
+其中，∇θtL(θt)\nabla_{\theta_t}L(\theta_t)∇θt​​L(θt​)为损失函数关于优化参数的梯度、β1\beta_1β1​、β2\beta_2β2​为用于控制一阶、二阶矩指数衰减率的超参数，一般设置为0.90.90.9和0.9990.9990.999。由于优化初始时刻，mtm_tmt​和vtv_tvt​的值较小，会在初始阶段被低估，此时需要引入一个偏差校正的环节：mt^=mt1−β1t\hat{m_t}=\frac{m_t}{1-\beta_1^t}mt​^​=1−β1t​mt​​、vt^=vt1−β2t\hat{v_t}=\frac{v_t}{1-\beta_2^t}vt​^​=1−β2t​vt​​，那么给定初始学习率η\etaη，Adam优化过程可以描述为：
+θt+1=θt−ηvt^+ϵmt^\theta_{t+1}=\theta_t-\frac{\eta}{\sqrt{\hat{v_t}}+\epsilon}\hat{m_t}
+θt+1​=θt​−vt​^​​+ϵη​mt​^​
+在优化过程中，一阶矩我们称为动量项，它通过累计加权累计历史梯度，从而表示一个平均的梯度方向，这个梯度方向象征了一个好的优化倾向。例如参数维度为3，每一个epoch如果都向梯度方向[1,1,1][1,1,1][1,1,1]进行优化，那么平均值[1,1,1][1,1,1][1,1,1]则证明该方向的梯度是值得采用的。
+而二阶矩对历史梯度的平方和进行累计，反映了梯度大小的累积幅度。如果以往的梯度累积幅度过大，说明该方向变化快或者敏感，如果每次按梯度原值更新，容易“跳过最优点”，此时则需要基于二阶矩减小学习率，使优化过程更为稳定。
+Adam结合了一阶矩和二阶矩，实现了自适应学习率，对于那些不经常更新的参数，会给予更大的学习率，很好地处理了稀疏问题。且相比于SGD需要精心选择学习率和动量参数，Adam无需手动调整太多学习率参数，在大多数情况下对超参数（尤其是学习率）的选择不那么敏感，通常默认参数就能取得不错的效果。
+在实际应用中，通常β1\beta_1β1​设置成0.9，β2\beta_2β2​设置成0.999，这么做的目的是因为vtv_tvt​项是对Hessian矩阵的一种近似，Hessian 是损失函数的全局曲率性质，它变化相对缓慢，不会像随机梯度那样剧烈波动，为了准确估计一个稳定的全局量，我们需要一个长期、平滑的估计，减少随机梯度噪声的影响；而mtm_tmt​项聚合历史梯度方向来加速收敛并减少振荡，在随机优化中，如果已经接近最优点，或者在不同区域梯度方向变化很大，长期的平均梯度E[gt]E[g_t]E[gt​]会趋近于0，如果太过关注全局，会导致出现更新停滞的问题，因此这部分平均应该更“局部”，关注近期的梯度方向，以便快速响应曲面的变化。
+
+
+
+AdamW
+由于在深度学习模型特别是大模型中，模型通常有大量的参数。如果模型参数过多且训练数据不足，模型就可能过度学习训练数据中的噪声和特有模式，而不是学习到数据的普遍规律。这导致模型过拟合。过拟合的模型往往具有非常大或非常小的权重，因为这些大权重使得模型对训练数据中的微小变化过于敏感，而 Weight decay 的目标就是抑制这种大权重的出现。
+而在原始的Adam中，Weight decay的实现是在损失中加上正则化项gt=∇θtL(θt)+λθtg_t=\nabla_{\theta_t}L(\theta_t)+\lambda\theta_tgt​=∇θt​​L(θt​)+λθt​，而这样的形式在Adam中则会被卷入了自适应缩放，使得正则化效果被压缩不能很好地起效果。
+AdamW的做法则是，将这一项移出了梯度缩放部分：
+θt+1=θt−ηvt^+ϵmt^−ηλθt\theta_{t+1}=\theta_t-\frac{\eta}{\sqrt{\hat{v_t}}+\epsilon}\hat{m_t} - \eta\lambda\theta_t
+θt+1​=θt​−vt​^​​+ϵη​mt​^​−ηλθt​
+新增项−ηλθt-\eta\lambda\theta_t−ηλθt​作为Weight decay项，其直接作用于参数θt\theta_tθt​，为了使正则化的更新幅度和普通梯度更新在“同一个尺度”上，加上学习率η\etaη对其进行固定值缩放，而不是自适应缩放。AdamW这种更优的正则化效果，在很多情况下，特别是对于这类基于Transformer进行堆叠的大模型，能够带来更好的泛化性能。
+
+
+
+一阶梯度与二阶梯度
+不论是Adam、AdamW、SGD+Momentum，这些方法都是基于一阶梯度进行的优化计算，根据一阶梯度来确定优化方向。而一阶梯度如同山坡的坡度一般，是有变化的，即逐渐变陡或变缓。当前坡度信息无法预测这种变化，根据当前坡度来确定步子大小就会产生一些问题。
+拿一个二维的目标函数为例，其表达式为L(x,y)=100x2+y2L(x,y)=100x^2+y^2L(x,y)=100x2+y2，等高线为椭圆，其一阶梯度为[200x,2y][200x, 2y][200x,2y]，二阶梯度为[200,2][200, 2][200,2]，假设待更新参数xt,ytx_t, y_txt​,yt​，根据一阶梯度更新公式为：xt+1=xt−200ηxtx_{t+1}=x_t - 200 \eta x_txt+1​=xt​−200ηxt​、yt+1=yt−2ηyty_{t+1}=y_t - 2 \eta y_tyt+1​=yt​−2ηyt​，此时若学习率稍微设置的大一些，为η=0.01\eta=0.01η=0.01，则有xt+1=−xtx_{t+1}=-x_txt+1​=−xt​，yt+1=0.98yty_{t+1}=0.98y_tyt+1​=0.98yt​。可以看见xxx维度上，其梯度变化率为200，即更为陡峭，而只依赖于一阶梯度进行更新则没有考虑这个信息，会在陡峭的维度上来回大幅度变化震荡，而在平缓的维度yyy上则又变化十分微小，如下图蓝线所示，而二阶梯度则能给出了一条直达最优处的直线，如红线所示：
+
+	
+
+而如果我们能够引入二阶梯度信息，相当于得到了坡度的变化信息，可以利用二阶梯度的信息来提升优化性能。比如经典牛顿法：θt+1=θt−ηH−1g\theta_{t+1} = \theta_t - \eta H^{-1}gθt+1​=θt​−ηH−1g，HHH为Hessian矩阵，可以写为特征分解的形式：H=QΛQTH=Q \Lambda Q^TH=QΛQT，QQQ包含了若干特征向量qiq_iqi​，Λ\LambdaΛ包含了若干特征值λi\lambda_iλi​，则形式可变换为：θt+1=θt−ηQΛ−1QTg\theta_{t+1} = \theta_t - \eta Q \Lambda^{-1} Q^T gθt+1​=θt​−ηQΛ−1QTg。
+PS：这里简单说明一下，给定一个方向向量vvv，那么函数在该方向上的二阶变化率可以表示为：vTHvv^THvvTHv。如果这个方向vvv取特征向量qiq_iqi​的话，则有vTHv=qiTHqi=qiT(λiqi)=λi(qiTqi)=λiv^THv=q_i^THq_i=q_i^T(\lambda_iq_i)=\lambda_i(q_i^Tq_i)=\lambda_ivTHv=qiT​Hqi​=qiT​(λi​qi​)=λi​(qiT​qi​)=λi​，由此可以发现，Hessian 的特征值λi\lambda_iλi​就是函数在特征方向qiq_iqi​上的二阶导数，也就是曲率。
+回到式子θt+1=θt−ηQΛ−1QTg\theta_{t+1} = \theta_t - \eta Q \Lambda^{-1} Q^T gθt+1​=θt​−ηQΛ−1QTg，QTgQ^TgQTg就相当于将梯度从原始坐标系拉到了Hessian 的特征坐标系；而后Λ−1\Lambda^{-1}Λ−1相当于在每个转换后的主方向上除以特征值也就是曲率，对Hessian特征坐标系下的梯度进行约束，带来的影响就是，陡峭方向走得更小，平缓方向走得更大；最后QQQ再变换回原始坐标系。这就很好地利用二阶信息提升了优化过程，精确地沿特征方向下降。
+虽然基于二阶梯度进行优化的方法收敛性很好，但是其计算量限制了实际的应用。每次梯度更新的时候都会带来平方级别的空间复杂度和立方级别的时间复杂度，因此这些方法在现在的深度学习优化方法中并不常见。可以由上述内容得知，如果在深度学习中要应用类似于牛顿法的方法，对Hessian矩阵做比较大的简化假设，比如对角矩阵或者低秩矩阵。
+
+
+
+Shamppo
+Google Research在2018年提出了一种名为Shamppo的高效近似二阶优化算法，其目标为利用二阶信息加速收敛，同时避免 Hessian 维度太大带来的计算负担，其核心思想是不直接计算或储存 Hessian，而是利用参数张量的结构（例如矩阵、卷积核等的维度）来做 Kronecker 分解近似。
+在简述Shamppo原理之前，需要简单介绍两个东西（省去一些复杂的推导，有兴趣可自己搜索查看）：
+Kronecker分解
+Kronecker分解思想可以简单概述如下：对于一个大方阵H∈Rmn×mnH \in \mathbb{R}^{mn \times mn}H∈Rmn×mn，如果能找到两个较小的矩阵A∈Rm×mA \in \mathbb{R}^{m \times m}A∈Rm×m、B∈Rn×nB \in \mathbb{R}^{n \times n}B∈Rn×n，使得H≈A⨂BH \approx A \bigotimes BH≈A⨂B，那么就可以用AAA和BBB来描述HHH，其中⨂\bigotimes⨂称为Kronecker积，定义为：
+
+	
+
+这样进行分解后，矩阵的存储量从原始的(mn)2(mn)^2(mn)2减少到了m2+n2m^2 + n^2m2+n2，大大减小了空间复杂度，且还可以推导得到如下性质：H−1≈A−1⨂B−1H^{-1} \approx A^{-1} \bigotimes B^{-1}H−1≈A−1⨂B−1，这样可以从求一个大矩阵的逆转换为求两个小矩阵的逆，大大减小了计算的时间复杂度。
+
+Adagrad/Adam/RMSProp 与 Hessian
+现有的Adagrad/Adam/RMSProp只是利用历史梯度平方的累积来近似 Hessian 的对角线元素，为什么这么说呢？由泰勒展开式可以得知：f(θ)≈f(θ∗)+12H(θ−θ∗)2f(\theta) \approx f(\theta^*)+\frac{1}{2}H(\theta-\theta^*)^2f(θ)≈f(θ∗)+21​H(θ−θ∗)2，那么两边求导得到：g=∂f∂θ=H(θ−θ∗)g = \frac{\partial{f}}{\partial{\theta}}=H(\theta-\theta^*)g=∂θ∂f​=H(θ−θ∗)，两边平方：g2=H2(θ−θ∗)2g^2 = H^2(\theta-\theta^*)^2g2=H2(θ−θ∗)2，求期望：E[g2]=H2E[(θ−θ∗)2]E[g^2] = H^2E[(\theta-\theta^*)^2]E[g2]=H2E[(θ−θ∗)2]。
+如果训练过程中的参数θ\thetaθ在最优点附近上下波动，那么可以认为(θ−θ∗)2(\theta-\theta^*)^2(θ−θ∗)2的期望是某个小常数，代表你在局部的探索范围，那么此时可得到：E[g2]∝H2E[g^2] \propto H^2E[g2]∝H2。
+在多维场景下，则需要假设各维度独立（即不同维度之间的协方差很小），则可以得到：E[gi2]∝Hii2E[g_i^2] \propto H_{ii}^2E[gi2​]∝Hii2​。此时再使用牛顿法：δθ=−H−1g\delta\theta = -H^{-1}gδθ=−H−1g -&gt; δθ=−1Hiig\delta\theta = -\frac{1}{H_{ii}}gδθ=−Hii​1​g，这就与Adam和RMSProp中的概念一致了。
+此处博客从Hessian近似看自适应学习率优化器中进行了相应的推导，最终的结论是“Hessian近似是梯度外积的平方根”，同时指出Adagrad最开始提出的实际就是累加梯度外积ggTgg^TggT，只不过缓存外积空间成本太大，所以实践中改为Hadamard积g⊙gg⊙gg⊙g，也即是上述所谓的“历史梯度平方”。
+
+Shamppo Optimizer
+在Shamppo中，假设模型某层权重参数矩阵为W∈Rm×nW \in \mathbb{R}^{m \times n}W∈Rm×n，其中mmm为输出维度，nnn为输入维度。参数梯度则为Gt=δtxtTG_t = \delta_tx_t^TGt​=δt​xtT​，其中xt∈Rnx_t \in \mathbb{R}^nxt​∈Rn为激活后的输入（列方向），δt∈Rm\delta_t \in \mathbb{R}^mδt​∈Rm为反向传播的误差信号（行方向）。由上述可知，可以使用梯度外积对Hessian进行近似：
+vec(Gt)=xt⨂δtvec(G_t) = x_t \bigotimes \delta_t
+vec(Gt​)=xt​⨂δt​
+那么有：E[vec(Gt)vec(Gt)T]=E[(xtxtT)⨂(δtδtT)]E[vec(G_t)vec(G_t)^T] = E[(x_tx_t^T) \bigotimes (\delta_t \delta_t^T)]E[vec(Gt​)vec(Gt​)T]=E[(xt​xtT​)⨂(δt​δtT​)]。
+令Rt=E[xtxtT]R_t =E[x_tx_t^T]Rt​=E[xt​xtT​]， Lt=E[δtδtT]L_t=E[\delta_t\delta_t^T]Lt​=E[δt​δtT​]，可得到：Ht2≈Rt⨂LtH_t^2 \approx R_t \bigotimes L_tHt2​≈Rt​⨂Lt​。在实际应用中使用统计均值代替期望，可以换一个表达方式：Lt≈1t∑τ=1tGτGτT∈Rm×mL_t \approx \frac{1}{t} \sum_{\tau = 1}^t G_{\tau}G_{\tau}^T \in \mathbb{R}^{m \times m}Lt​≈t1​∑τ=1t​Gτ​GτT​∈Rm×m、Rt≈1t∑τ=1tGτTGτ∈Rn×nR_t \approx \frac{1}{t} \sum_{\tau = 1}^t G_{\tau}^TG_{\tau} \in \mathbb{R}^{n \times n}Rt​≈t1​∑τ=1t​GτT​Gτ​∈Rn×n，由于1t\frac{1}{t}t1​作为一个常量，只算是一个时间衰减因子，后续可以结合在学习率中从而去除，于是写成：Lt∝∑τ=1tGτGτT∈Rm×mL_t \propto \sum_{\tau = 1}^t G_{\tau}G_{\tau}^T \in \mathbb{R}^{m \times m}Lt​∝∑τ=1t​Gτ​GτT​∈Rm×m、Rt∝∑τ=1tGτTGτ∈Rn×nR_t \propto \sum_{\tau = 1}^t G_{\tau}^TG_{\tau} \in \mathbb{R}^{n \times n}Rt​∝∑τ=1t​GτT​Gτ​∈Rn×n。
+有了Hessian的近似表达后，我们可以进一步推导得到：Ht≈Rt−1/2⨂Lt−1/2H_t \approx R_t^{- 1/2} \bigotimes L_t^{- 1/2}Ht​≈Rt−1/2​⨂Lt−1/2​。而后按照Adagrad中描述的更新范式进行更新：θt−ηHt−1/2gt\theta_t - \eta H_t^{- 1/2}g_tθt​−ηHt−1/2​gt​进行更新，最终的表达式为：θt+1=θt−ηLt−1/4GtRt−1/4\theta_{t+1} = \theta_t - \eta L_t^{-1/4}G_tR_t^{-1/4}θt+1​=θt​−ηLt−1/4​Gt​Rt−1/4​。
+在实际应用中，RtR_tRt​和LtL_tLt​采用指数平均的方式进行更新：
+Lt+1=βLt+Gt+1Gt+1TL_{t+1} = \beta L_t + G_{t+1}G_{t+1}^T
+Lt+1​=βLt​+Gt+1​Gt+1T​
+Rt+1=βRt+Gt+1TGt+1R_{t+1} = \beta R_t + G_{t+1}^TG_{t+1}
+Rt+1​=βRt​+Gt+1T​Gt+1​
+Shamppo中，默认β\betaβ为1。
+Shamppo算法距离实际应用还有几个难点：
+
+预条件子的计算和存储的巨大消耗；
+LLL、RRR矩阵的求逆与求根的巨大消耗；
+神经网络加速器通常是定制的，其加速器设计倾向于低精度（8bit/16bit），能够满足现有的方案。而Shamppo需要双精度运算，因此已有的加速器甚至都不会启动。现有深度学习库提供的最优化器 API 适应于一阶梯度下降模式。而二阶优化器需要与训练循环做交互，因此从实现上需要对框架底层做出修正。Google在后续的工作中提出了相应的算法和组件上的优化，使得Shamppo二阶优化器在大模型上成功work。
+
+
+
+
+Muon（MomentUm Orthogonalized by Newton-schulz）
+对于矩阵参数W∈Rm×nW \in \mathbb{R}^{m \times n}W∈Rm×n而言，Muon的更新公式为：
+Mt=βMt−1+GtM_t = \beta M_{t-1} + G_t
+Mt​=βMt−1​+Gt​
+Wt=Wt−1−η[msign(Mt)+λWt−1]W_t = W_{t-1} - \eta [msign(M_t) + \lambda W_{t-1}]
+Wt​=Wt−1​−η[msign(Mt​)+λWt−1​]
+其中，msignmsignmsign是矩阵符号函数，是sign函数的矩阵化推广，它跟SVD的关系是：SVD(M)=UΣVTSVD(M)= U\Sigma V^TSVD(M)=UΣVT，msign(M)=U[:,:r]V[:,:r]Tmsign(M) = U_{[:,:r]}V_{[:,:r]}^Tmsign(M)=U[:,:r]​V[:,:r]T​，其中rrr为MMM的秩。在SVD中，将一个矩阵MMM看成输入空间到输出空间的线性变换，VVV为输入空间的主方向，UUU为输出空间的主方向，而Σ\SigmaΣ则代表转换到输入空间后沿每个方向的拉伸幅度大小，这个拉伸程度的不同体现了SVD的“各向异性”。
+而对于msignmsignmsign而言，相当于只保留了方向映射，将所有方向拉至单位长度。
+苏神这篇博客写得很深入，推荐去阅读：Muon优化器赏析：从向量到矩阵的本质跨越，其中谈到，像Adagrad、RMSprop、Adam等自适应学习率优化器主要有两个特点：
+
+损失函数的常数缩放不影响优化轨迹；
+每个参数分量的更新幅度尽可能一致。而Muon则满足这两点要求：
+
+假设进行SVD，损失函数乘以λ\lambdaλ，MMM也会乘以λ\lambdaλ，结果是Σ\SigmaΣ被乘以λ\lambdaλ，但Muon最后的更新量是将Σ\SigmaΣ变为单位矩阵，所以不会产生任何影响；
+Muon的“各向同性“也起到了同步更新幅度的作用。
+
+
+
+实际应用中，如果每一步都对MMM进行SVD求解msign(M)msign(M)msign(M)的话，计算成本相对较大，我们可以利用SVD得到如下公式：msign(M)=(MMT)−1/2M=M(MTM)−1/2msign(M) = (MM^T)^{-1/2}M = M(M^TM)^{-1/2}msign(M)=(MMT)−1/2M=M(MTM)−1/2，将(MTM)−1/2(M^TM)^{-1/2}(MTM)−1/2在MTM=IM^TM=IMTM=I处展开得到：msign(M)≈815M−54M(MTM)+38M(MTM)2msign(M) \approx \frac{8}{15} M - \frac{5}{4}M(M^TM) +  \frac{3}{8}M(M^TM)^2msign(M)≈158​M−45​M(MTM)+83​M(MTM)2，如果XtX_tXt​为msign(M)msign(M)msign(M)某个近似，基于Newton-schulz迭代可以得到一个更优的近似：Xt+1≈815Xt−54Xt(XtTXt)+38Xt(XtTXt)2X_{t+1} \approx \frac{8}{15} X_t - \frac{5}{4}X_t(X_t^TX_t) +  \frac{3}{8}X_t(X_t^TX_t)^2Xt+1​≈158​Xt​−45​Xt​(XtT​Xt​)+83​Xt​(XtT​Xt​)2。
+Muon和Shamppo之间的联系
+Shamppo中也涉及到了一部分矩阵的幂运算，而不是采用Newton-schulz迭代这类迭代算法，而是采用SVD进行运算，这样会相比之下产生更多的计算量，因此Shamppo中RtR_tRt​、LtL_tLt​的更新是以一定的步数间隔来更新的。由上述Shamppo的指数平均的更新公式可以推导，当β=0\beta = 0β=0时，有(GGT)−1/4G(GTG)−1/4=msign(G)(GG^T)^{-1/4}G(G^TG)^{-1/4} = msign(G)(GGT)−1/4G(GTG)−1/4=msign(G)，这时候两者等价。
+PS：感觉有部分地方还是有点半知半解，后续还是要持续学习(˘•ω•˘)。
+
+
+
+参考资料
+
+《Shampoo: Preconditioned Stochastic Tensor Optimization》
+https://zhuanlan.zhihu.com/p/109548834
+https://spaces.ac.cn/archives/10592
+https://spaces.ac.cn/archives/10588
+https://kellerjordan.github.io/posts/muon/
+《Scalable Second Order Optimization for Deep Learning》
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>LLaMA技术报告阅读笔记</title>
+    <url>/2025/09/08/llama/</url>
+    <content><![CDATA[Introduction
+GPT-3基于Few-shot展示了一个现象：模型的能力随着其规模的增大而获得提升。然而，Hoffmann等人在2022年的工作——《Training Compute-Optimal Large Language Models》中提到：在固定的计算预算下，最佳性能并不是由最大模型取得的，而是由较小的模型在更多数据上训练得到的。Hoffmann等人修正后的scaling law表明：在特定的训练计算预算下，确定数据集规模和模型规模的最佳配比。
+然而，上述的目标却忽视了推理预算，而推理预算在大规模部署语言模型时至关重要。例如大模型虽然能够在训练时快速地达到某个性能，在部署推理时成本却较高；而小模型虽然本身能力有限，需要多轮训练才能收敛到某个性能，但是在推理时成本更低，长期来看更为实用。
+Meta的目标是：使用比通常训练更多的数据，来在不同推理预算下都能找到“性能最佳”的模型。LLaMA的规模从7B到65B不等，同时，其训练数据均是开源的，为开源社区提供了又一个重要资源。
+
+
+
+Pre-training
+Pre-training Data
+LLaMA的预训练数据来自多个数据源，覆盖了多个领域，其中也不乏包含了其他LLM的开源预训练数据，这里介绍一下：
+English CommonCrawl [67%]
+Meta收集了2017-2020年间的五份Common Crawl dump，使用CCNet Pipline进行数据处理。（CCNet是一个Facebook提出的，从CommonCrawl网页数据中自动构建高质量语料的处理流水线。包含如下几个步骤：
+
+
+去重：这里使用的是行级别去重，将网页数据按照行划分，使用Minihash、Simhash等算法进行重复文本检测，最后去除这些重复的内容；
+
+
+语言识别：只保留目标语言的文本，其中LLaMA中主要使用的是英文。具体而言，CCNet使用 fastText 的语言分类器，能在几毫秒内识别一句话的语言。这样做能够收敛数据中包含的语言种类，提高模型的专注性；
+
+
+质量过滤：使用n-gram进行计算，从而判断句子流畅度，过滤掉低质量的语料。
+
+
+C4 [15%]
+在探索性实验中，Meta发现使用多样化的预处理CommonCrawl数据集能够提升模型性能，于是Meta在数据集中加入了一定量的C4数据集。C4也包含去重与语言识别两个步骤，但是在质量过滤步骤使用了启发式的方法，通过标点、长度、字符比例等经验规则来快速去掉低质量语料。
+Github [4.5%]
+Meta使用了 Google BigQuery 上公开可用的 GitHub 数据集，只选公开可再利用的项目，进行许可证筛选。而后进行数据清洗，包括对低质量文件的过滤（如果某些文件的行过短或过长，或字母数字字符比例异常，说明可能是无效代码、二进制/乱码，直接丢弃）和模版代码的去除（通过正则表达式剔除“样板部分”，比如版权声明、自动生成的文件头注释等，这些部分通常与代码主题关系不大）。最后进行文件级别的去重，去掉一些拷贝、fork之类的文件。
+Wikipedia [4.5%]
+引入了 20 种语言的 Wikipedia 数据，清洗掉格式信息后（去掉超链接、注释和格式化样板，比如维基百科里的 HTML 标签、编辑痕迹、表格标记等）作为高质量百科知识来源。
+Gutenberg and Books3 [4.5%]
+这部分数据来源于 Project Gutenberg （多是文学经典、历史文献、语言偏正式、结构完整）和 Books3 （包含现代刊物、更符合当前时代的写作风格与主题）。此外，也进行了书籍层面的去重。
+ArXiv [2.5%]
+从 arXiv 的 LaTeX 源文件中提取科学论文相关语料，去除非正文部分、参考文献和注释部分并统一宏定义。
+Stack Exchange [2%]
+Stack Exchange 是一个问答平台，选择 28 个最大子站点，这些站点具有覆盖面广的特点，但避免小众站点带来稀疏数据。而后去除网页的html标签，得到干净文本。在 Stack Exchange 中，答案具有投票机制，按分数从高到低排序，使得模型优先接触更优的回答。
+
+    
+
+
+Tokenizer
+使用基于SentencePiece实现的BPE算法进行分词，并做了两点优化：数字拆分为单个字符，提升泛化与数值处理能力；在遇到未知的 UTF-8 字符时回退到字节级别进行分解（如一些表情符号）。
+
+Model
+Meta在架构上从一些工作上获得灵感，组建了LLaMA的架构：
+
+
+为了提高训练的稳定性，与GPT-3一样，LLaMA使用了Pre-norm作为归一化选择，选择RMSNorm作为归一化函数；
+
+
+从PaLM中获得灵感，使用SwiGLU作为激活函数来代替ReLU，但是使用234d\frac{2}{3}4d32​4d维度，而不是PaLM中的4d4d4d；
+
+
+和GPT-Neo一样，LLaMA移除了绝对位置编码，使用RoPE进行位置编码；
+
+
+使用Loshchilov等人在17年提出的AdamW优化器，超参数设置为：β1=0.9,β2=0.95\beta_1=0.9, \beta_2=0.95β1​=0.9,β2​=0.95。使用 cosine lr schedule 将学习率衰减最大学习率的10%。此外，LLaMA还是用了0.1的 weight decay、1.0的 gradient clipping、2000步的warmup。Batch size 和 lr 会随着模型规模的变化而变化，具体如下表：
+
+
+
+    
+
+
+Efficient implementation
+Meta为了提高LLaMA的训练效率，采取了一系列措施：
+
+基于xformersxformersxformers，使用了一种高效的因果注意力实现方式；
+LLaMA中手写了backward，避免PyTorch的自动微分保存所有激活值，LLaMA只保存昂贵的激活（比如线性层输出），而不是全部保存，实现定制化checkpoint；
+通过模型并行（model parallelism）和序列并行（sequence parallelism）降低单张GPU的显存压力。同时，将GPU之间的通信与部分激活值的计算一同进行，节省训练时间。
+
+
+
+
+参考资料
+
+《LLaMA:OpenandEfficient Foundation Language Models》
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>LoRA -《LORA:LOW-RANK ADAPTATION OF LARGE LANGUAGE MODELS》论文阅读笔记</title>
+    <url>/2025/10/22/lora/</url>
+    <content><![CDATA[Introduction
+主流的大模型训练范式之一便是“Pre-train + Finetune”，即“通用能力的学习+下游任务的适配”两个环节，而在下游任务适配这一环节中，似乎全参数的微调成本随着模型规模的增大而逐渐变得难以接受，部分研究者也针对这个问题进行了一些高效适配方案的研究。
+目前主流的下游任务高效适配方案主要分为两大类：
+
+在Transformer中加入Adapter层；
+优化输入层激活的某些部分（e.g. Prefix-tuning、Prompt-tuning ）。
+
+而前者会引入推理延迟，尽管 Adapter 参数量很少（通常 &lt;1%），但由于其增加了新的计算层，在在线推理场景下，尤其是batch size 很小时，推理延迟显著增加（如下图所示），尤其是在分布式训练中，当模型需要进行分片并行时，Adapter 的额外深度会增加 GPU 间同步操作的次数，进一步拖慢推理；后者直接优化Prompt，难以训练收敛，且随着可训练参数数量的变化，性能并不单调提升。其中，prefix-tuning 需要占用一部分输入序列长度来表示任务特征，从而减少了可用于实际任务的输入空间，影响下游性能。
+
+    
+
+
+
+
+Aghajanyan等人和Li等人的工作早已揭晓如下事实：即深度学习模型或者如今的LLM，在一个低维子空间进行学习也能达到全参数学习的性能。
+于是作者提出了如下假设：“在模型适配微调的过程中，“权重的变化”这个事情本身同样也具有低秩结构”，即权重具有“内部秩”（intrinsic rank），换句话说，模型的更新总是集中在那么几个方向上。
+根据上述假设，作者提出了LoRA（Low-Rank Adaptation），在微调时冻结预训练模型的权重，将权重的更新部分建模为可训练的低秩分解矩阵（如下图所示），数学表达为：W′=W+ΔWW&#x27; = W + \Delta WW′=W+ΔW，此处的待训练的低秩分解矩阵即ΔW\Delta WΔW。即给定一个下游数据集Z={(xi,yi)}i=1NZ=\{(x_i, y_i)\}_{i=1}^NZ={(xi​,yi​)}i=1N​，从原来的全参数微调目标：$ \max_{\theta} \sum_{(x, y) \in Z} \sum_{t=1}^{|y|} \log P_{\Theta}(y_t \mid x, y_{&lt;t})变为LoRA的微调目标：变为LoRA的微调目标：变为LoRA的微调目标：\max_{\theta} \sum_{(x, y) \in Z} \sum_{t=1}^{|y|} \log P_{\Theta_0 + \Delta \Theta(\theta)}(y_t \mid x, y_{&lt;t})$。
+
+    
+
+对于权重W0∈Rd×kW_0 \in \mathbb{R}^{d \times k}W0​∈Rd×k，前文提到提到对该权重的更新部分进行低秩分解：ΔW=BA\Delta W = BAΔW=BA，其中B∈Rd×rB \in \mathbb{R}^{d \times r}B∈Rd×r、A∈Rr×kA \in \mathbb{R}^{r \times k}A∈Rr×k，r≪min(d,k)r \ll min(d, k)r≪min(d,k)。在初始化时，将AAA初始化为高斯随机噪声，BBB初始化为全零矩阵，即初始时刻ΔW=0\Delta W = 0ΔW=0，那么在前向传播中就有：
+h=W0x+ΔWx=W0x+BAxh = W_0 x + \Delta W x = W_0 x + B A xh=W0​x+ΔWx=W0​x+BAx
+
+
+
+LoRA与全量微调的关系
+可以注意到，当ΔW\Delta WΔW为full-rank时（rank(ΔW)=min(d,k)rank(ΔW)=min(d,k)rank(ΔW)=min(d,k)），此时不再受限于低秩近似，可以覆盖整个参数空间，此时LoRA退化为全量微调。
+
+
+
+无推理延迟
+当BBB、AAA训练完成后，我们在推理前可以预先计算W~=W0+BA\widetilde{W} = W_0 + BAW=W0​+BA，而后每一步的推理就按微调前的模型推理进行：h=W~xh = \widetilde{W} xh=Wx，推理速度不会造成影响。
+
+
+
+LoRA在Transformer中的应用
+在Transformer中，一个Self-attetion模块通常涉及四个权重矩阵：WqW_qWq​、WkW_kWk​、WvW_vWv​、WoW_oWo​，还包含扩张和收缩两个MLP层，文中作者选择只在WqW_qWq​、WkW_kWk​、WvW_vWv​、WoW_oWo​上进行LoRA性能比较实验，而其他权重选择冻结，对比实验结果如下图所示。可分析得到两个结论：
+
+在表中，选择WqW_qWq​和WvW_vWv​进行LoRA是性能最优的；
+“对单个矩阵进行较高值的低秩分解”性能不及“对多个矩阵进行较低值的低秩分解”。
+
+
+    
+
+
+
+
+如何找到LoRA最优的秩r？
+对于这个问题，作者基于上述的设置又进行了如下表所示的对比实验，可以得到如下几个结论：
+
+在秩非常低时（rrr=1、2）已经能够取得较好的性能，继续增大秩并不能带来显著的性能提升；
+对WqW_qWq​和WvW_vWv​进行LoRA时，较小的秩下性能更为稳定；3、仅对WqW_qWq​进行LoRA时，模型性能对于秩的设置十分敏感，波动不规律。
+
+
+    
+
+
+
+
+不同秩之间的子空间相似度
+作者在文中提出了以下问题：当我们使用不同的秩（比如r=8r = 8r=8/r=64r=64r=64）时，模型学习到的ΔW\Delta WΔW的特征空间是否相同？
+文中通过计算一个空间重叠度来衡量这种相似性：比如对于r=8r=8r=8和r=64r=64r=64，对LoRA得到的矩阵Ar=8A_{r=8}Ar=8​和Ar=64A_{r=64}Ar=64​进行SVD，由于SVD的右矩阵体现了输入空间的主要方向，我们选取右矩阵结果UAr=8U_{A_{r=8}}UAr=8​​和UAr=64U_{A_{r=64}}UAr=64​​，我们想要弄清楚，r=8r=8r=8的前top−itop-itop−i个奇异向量（1≤i≤81 \leq i \leq 81≤i≤8）有多少被包含在r64r64r64的前top−jtop-jtop−j个奇异向量（1≤j≤641 \leq j \leq 641≤j≤64）中？
+对于上述这类问题，我们可以使用Grassmann距离进行衡量，可以计算为：
+Φ(Ar=8,Ar=64,i,j)=∣∣UAr=8iTUAr=64j∣∣F2min(i,j)∈[0,1]\Phi(A_{r=8}, A_{r=64}, i, j)=\frac{||U_{A_{r=8}}^{iT}U_{A_{r=64}}^{j}||^2_F}{min(i,j)} \in [0, 1]
+Φ(Ar=8​,Ar=64​,i,j)=min(i,j)∣∣UAr=8​iT​UAr=64​j​∣∣F2​​∈[0,1]
+该距离取值范围为0到1，0表示彻底独立的两个子空间，1表示完全重叠的两个子空间，实验结果如下图所示，其中右边图3图4为左边图1图2左下角的放大。
+由图可知，r=8r=8r=8和r=64r=64r=64的top几个方向颜色较浅，说明r=8r=8r=8和r=64r=64r=64的top几个方向重叠度较高；而右下角颜色较深，说明r=64r=64r=64高秩的部分没有和r=8r=8r=8的top部分产生很强的相关性，也就是说top方向的作用最大，其他更多的多余方向可能会引入更多的噪声。尤其是i=j=1i=j=1i=j=1的方向，重叠度超过了0.5，这解释了为什么 r=1r=1r=1 时也能在 GPT-3 上取得不错效果，也就是说，更新矩阵的大部分有效信息集中在这个最重要的方向上，即ΔW\Delta WΔW具有很小的内部秩。
+
+    
+
+
+
+
+随机种子验证
+为了验证上述关于内部秩的结论，文中在相同的预训练模型上，用两个不同随机种子进行r=64r=64r=64的LoRA，然后对比两次训练学到的Ar=64A_{r=64}Ar=64​的子空间相似度，如果两个训练结果的子空间相似度很高，说明模型确实倾向学习到相同的低秩结构（而不是噪声），也就是计算：
+S(Ar=64(Seed1),Ar=64(Seed2))S(A_{r=64}^{(Seed1)},A_{r=64}^{(Seed2)})
+S(Ar=64(Seed1)​,Ar=64(Seed2)​)
+实验结果如下图所示，结果显示，ΔWq\Delta W_qΔWq​的内部秩比ΔWv\Delta W_vΔWv​的内部秩更高，且相似度更高，这说明了两个现象：
+
+不论在什么随机种子下进行训练，ΔWq\Delta W_qΔWq​得到的top个向量方向都更为一致且稳定；
+内部秩高代表了WqW_qWq​这个模块在任务中起到的作用更关键，它的有效子空间更为复杂。此外，实验还分析了高斯噪声，由于噪声不具备相关性，所以自然呈现的是纯黑的样子。
+
+
+    
+
+
+
+
+ΔW\Delta WΔW和WWW的关系
+作者针对ΔW\Delta WΔW和WWW的关系这个角度提出了如下问题：1、ΔW\Delta WΔW和WWW是否方向相似？（或者说，ΔW\Delta WΔW是否主要分布在WWW的top个奇异方向上？）2、LoRA 在这些主要方向上的更新幅度有多大？
+文中利用SVD的角度对这个问题进行了分析，首先，对ΔW\Delta WΔW进行奇异值分解：ΔW=UΣVT\Delta W = U \Sigma V^TΔW=UΣVT，而后将WWW投影到ΔW\Delta WΔW的rrr维空间中：UTWVTU^TWV^TUTWVT，随后我们比较ΔW\Delta WΔW和UTWVTU^TWV^TUTWVT的Frobenius 范数（计算方式：对于一个矩阵A=[aij]∈Rm×nA = [a_{ij}] \in \mathbb{R}^{m \times n}A=[aij​]∈Rm×n，其Frobenius 范数计算为∣∣A∣∣F=∑i=1m∑j=1naij2||A||_F = \sqrt{\sum_{i=1}^{m} \sum_{j=1}^{n}  a_{ij}^2}∣∣A∣∣F​=∑i=1m​∑j=1n​aij2​​）。
+这样做的理由是什么呢？我们假设矩阵A和A和A和BBB两者主方向完全重合，有：A=α⋅BA = \alpha \cdot BA=α⋅B，那么我们也先对BBB进行SVD，按上述公式求两者的范数比值则为：∣∣UTAVT∣∣F∣∣B∣∣F\frac{|| U^T A V^T ||_F}{||B||_F}∣∣B∣∣F​∣∣UTAVT∣∣F​​，由于正交矩阵不影响范数的大小，所以可以推导得到：∣∣UTAVT∣∣F∣∣B∣∣F=∣∣UT(α⋅B)VT∣∣F∣∣B∣∣F=∣α∣\frac{|| U^T A V^T ||_F}{||B||_F} = \frac{|| U^T (\alpha \cdot B) V^T ||_F}{||B||_F} = |\alpha|∣∣B∣∣F​∣∣UTAVT∣∣F​​=∣∣B∣∣F​∣∣UT(α⋅B)VT∣∣F​​=∣α∣。
+可见如果两个矩阵的主方向重合时，根据上述公式得到的为一个大于0的值α\alphaα，这个值反映了如果AAA中有主方向与BBB中主方向重合时，AAA在幅度上对其的放大程度是多少。而如果假设AAA和BBB方向毫无关联，接近正交，那么此时UTAVT≈0U^T A V^T \approx 0UTAVT≈0，导致比值为0。也就是说，我们可以通过这个比值的大小来判断两个矩阵是否主方向关联。
+
+    
+
+
+
+WqW_qWq​在自己的特征空间下主方向重合度是最高的，这很直观，自己与自己当然最一致；
+
+
+相比于WqW_qWq​与随机矩阵而言，WqW_qWq​与ΔWq\Delta W_qΔWq​的比值更大，也就是说WqW_qWq​与ΔWq\Delta W_qΔWq​之间存在一定的联系，ΔW\Delta WΔW的更新包含了一部分WWW中的特征；
+
+
+WqW_qWq​与ΔWq\Delta W_qΔWq​的比值远小于WqW_qWq​与自身的比值，这说明LoRA中deltaWdelta WdeltaW并不是简单重复更新原矩阵的主方向，而是重点增强那些在WWW中没有被强调的方向，换句话说，LoRA能够补充模型的“盲区”或“弱特征”，从而修正模型对下游任务敏感的方向；
+
+
+可以观察到，在r=4r=4r=4时，ΔW\Delta WΔW中对于与WWW中相关的主方向的放大倍数为α=6.91/0.32≈21.5\alpha = 6.91 / 0.32 \approx 21.5α=6.91/0.32≈21.5，意味着低秩情况下，ΔW\Delta WΔW对于主方向的增强还是很明显的。而当秩增大r=64r=64r=64时，这个增强效果反而减弱了，这是因为当rrr增大时，每个方向的增强幅度分散了，导致整体放大因子变小（作者还做了一些实验验证这个部分，具体可以参考原文，这里不展开说了）。
+
+
+
+
+
+参考资料
+
+《LORA: LOW-RANK ADAPTATION OF LARGE LANGUAGE MODELS》
+https://baike.baidu.com/item/奇异值分解/4968432
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>GPT-3技术报告阅读笔记</title>
+    <url>/2025/08/24/gpt3/</url>
+    <content><![CDATA[Introduction
+“预训练-微调”这个范式在许多具有挑战性的NLP任务上取得了重大进展，但是仍然存在许多局限性，最主要的一个是：虽然模型架构与任务无关，但是仍然需要任务特定的数据集和任务特定的微调，要在期望的任务上实现强大的性能，通常需要针对该任务包含数千到数十万个样本的数据集进行微调。
+
+
+为每个任务收集数据成本高昂，不现实；
+
+
+大模型在窄数据上微调，容易“学偏”（过拟合和虚假相关），benchmark高分可能“造假”，实际应用表现不佳；
+
+
+人类只需几个例子就能学会，NLP系统应该追求这种流畅和通用。
+
+
+元学习或者说情境学习（In-Context Learning）是解决上述问题的理想途径，gpt-2便只在大量预构造的数据集上进行预训练，仅通过任务提示（Prompt）就能完成一些任务的潜力（Zero-shot），但是目前性能表现还是不够好，远远不如微调的效果（CoQa F1 值为55，与最先进的技术相比差了35）。
+
+	
+
+文章还提到另外一个点，即扩大模型规模可能是解锁In-Context Learning潜力的钥匙。近年来，基于tansformer架构的语言模型参数量逐渐增大，每次都带来了下游任务性能的改进，并且有证据表明，与许多下游任务密切相关的对数损失（log loss）随着规模扩大遵循一个平滑的改进趋势。
+OpenAI通过训练了一个更大规模的模型——175B的gpt-3，并在如下三种设置下进行情景学习能力的探讨：
+
+零样本（Zero-shot）：只给任务指令，例如：把中文翻译为英文：；
+单样本（One-shot）：给出任务指令加一个任务实例，例如：把中文翻译为英文： + 原文-&gt;译文；
+少样本（Few-shot）：给出任务指令加若干个任务实例（通畅10-100个），例如：把中文翻译为英文： + 原文1-&gt;译文1 + ... + 原文n-&gt;译文n。
+
+
+
+
+few-shot 任务测试
+OpenAI进行了一个简单任务的少样本学习过程，该任务要求模型从一个单词中去除无关的符号。下图为实验结果：
+
+	
+
+
+	
+
+可知两点：
+
+模型的性能随着任务描述的加入以及上下文中示例数量K的增加而提高；
+少样本学习能力也随着模型规模的大小而显著提升。
+
+这些“学习”曲线不涉及任何梯度更新或微调，仅仅是作为条件给出的演示示例数量的增加。
+GPT-3在零样本设置下的CoQA上达到了81.5 F1，在单样本设置下的CoQA上达到了84.0 F1，在少样本设置下达到了85.0 F1。类似地，GPT-3在零样本设置下的TriviaQA上达到了64.3%的准确率，在单样本设置下达到68.0%，在少样本设置下达到71.2%。
+当然，在另一些任务中，即使是在GPT-3，在少样本下的性能仍然不足。如用于自然语言推理任务的数据集ANLIy，以及如RACE或QuACz这样的阅读理解数据集。
+OpenAI还训练了一系列较小的模型（参数从0.125B到13B），以便在零样本、单样本和少样本中将它们的性能与GPT-3进行比较。对于大多数任务，性能都随着模型规模呈现出相对平滑的缩放趋势，零样本、单样本和少样本性能之间的差距通常随着模型容量的增大而扩大。由第二张图可知，few-shot下， 随着模型规模的增大，性能稳步提升更大，相较于zero-shot和one-shot性能更好，一是证明了few-shot在in-context learning中的能力更强，二是证明了更大的模型更擅长in-context learning。
+
+
+
+数据污染
+由于gpt-3使用的预训练数据集Common Crawl规模巨大，很可能无意中包含了后续用于测试的数据，团队开发了工具来检测和量化这种影响，并对可能受污染的数据集进行标注或不予报告，保证了实验结果的可信度，尽管可能这种污染对gpt-3在大多数数据集上的性能影响较小。
+
+
+
+更通用更智能的解决方式
+下图展示了一个将英语翻译为法语的例子，单样本像给数据标注员工布置任务，零样本则像直接给人类一个口头指令。GPT-3的目标不仅是提高benchmark分数，更是追求一种更接近人类智能的、灵活通用的问题解决方式。虽然少样本性能可能更接近SOTA，但单样本和零样本似乎才是与人类表现进行公平比较的更合理的setting，因为人类通常不需要看100个例子才能学会一个新任务。
+
+	
+
+
+
+
+Training
+Model Structure
+gpt-3保留了gpt-2大部分的架构，如特定的参数初始化方法、Pre-norm、基于字节到Unicode映射的BPE分词等。不同之处，gpt-3采用了一种“ 交替的密集和局部带状稀疏注意力模式（alternating dense and locally banded sparse attention patterns）”，如下图，类似于Sparse Transformer，这里说的应该是gpt-3的attention由dense attention和 locally banded sparse attention混合组成，全局和局部特征都能够兼顾到。
+
+	
+
+OpenAI训练了8个不同规模的模型（从125M到175B），从而进行Scaling Law的相关研究（模型的性能（损失）随规模增大遵循一个平滑、可预测的幂律关系）。
+下表中的具体参数（层数 n_layers、模型维度 d_model、前馈层维度 d_ff = 4 * d_model、头数等）并非通过大量神经架构搜索得来，而是基于如何最有效地利用算力以及在多个GPU上进行模型并行时，如何平衡各GPU的计算负载，避免通信瓶颈等原则考虑。
+
+	
+
+
+Data
+训练一个超大规模模型，不仅需要海量的数据，更需要高质量、高多样性和去重后的数据：
+原始数据质量控制
+原始Common Crawl数据包含大量低质量（如垃圾邮件、机器生成文本、格式错误内容）的文本。文中使用一个高质量参考语料库（可能包括书籍、高质量网页等）作为“黄金标准”，通过计算文本相似度（例如，使用嵌入向量）来筛选Common Crawl中与这些高质量文本相似的内容。这相当于用一个高质量的“滤网”过滤掉互联网数据中的大部分垃圾，过滤后数据量从45TB压缩到570GB，但平均质量大幅提升；
+匹配去重
+网络数据中存在大量近似重复的内容（例如，同一新闻文章被不同网站转载时有微小修改，或内容聚合网站的列表）。精确匹配去重无法消除这些内容。文中使用模糊哈希或最小哈希（MinHash） 等技术，在文档级别识别并移除高度相似但不完全相同的文档，避免模型在几乎相同的内容上浪费训练时间和容量，同时保证评估有效性；
+数据混合
+采用混合高质量数据策略，并非单纯的按数据源大小等比例采样，而是对高质量数据源进行上采样，提高模型看到高质量数据的概率。数据源包括扩展版WebText（来自Reddit高赞帖子的外链内容，主观质量高）、Books1 &amp; Books2（两个大型图书语料库，包含长篇幅、逻辑连贯的文本）、Wikipedia（高质量、结构化的百科全书数据）。文中明确接受“用少量的过拟合风险来换取更高质量的训练数据”，这意味着宁愿让模型在高质量数据集上多学几遍（轻微过拟合），也要确保模型从最高质量的数据中充分学习其优秀的语言结构和知识；
+数据污染
+文中也考虑了数据污染的情况，例如下游任务的测试集或开发集数据意外地出现在了模型的训练数据中，对于gpt-3这种在互联网上进行预训练的大模型，即使是偶然看到过测试数据，也可能导致其评估分数被大幅夸大，无法反映其真实的零/少样本学习能力。OpenAI努力搜索并移除已知的重叠部分。但是去重过程并不完美，有些污染未被清除，不过文中专门分析了残留污染对结果的影响程度，让读者可以自行判断。（PS：gpt-2曾经为了展示模型Zero-shot的能力，专门移除了Wikipedia相关数据，但是gpt-3重新引入了进来，虽然也进行了数据污染相关分析，但是这时候的目的似乎已经变为了“探索模型规模的极限，尽可能挖掘出最大规模模型的最佳性能”，所以Wikipedia这样高质量的数据是不可能错过的）。
+
+	
+
+
+Training Setting
+在OpenAI发布的《Scaling laws for neural language models》中提到：更大的模型通常可以使用更大的batch size，但需要更小的学习率，在训练期间测量梯度噪声规模，并用它来指导选择批量大小。
+为了训练更大的模型而不耗尽内存，GPT-3使用了张量并行和流水线并行的混合策略，所有模型都在V100 GPU上训练：
+
+
+
+GPT-3的局限性
+常识表示与推理能力
+文本生成会出现重复、前后矛盾、逻辑断裂（non-sequitur）；在需要常识物理和复杂推理（如比较、蕴含理解）的任务上表现接近随机水平。模型学到了语言的统计规律，但可能缺乏更深层的世界模型和逻辑推理链条。未来LLM可能需要隐含地指向需要更好的常识表示和推理能力集成。
+
+自回归模型的局限
+纯自回归模型（从左到右生成）具有固有缺陷。它不擅长回顾、比较、填充等需要“双向”信息的任务。gpt-3模型设计牺牲了双向性，导致在WIC、ANLI、RACE等任务上表现不佳。未来可以构建超大规模的双向模型（如BERT风格的），并探索如何让双向模型也能进行少样本学习。
+
+信息重要性
+当前的自回归预训练目标函数平等对待所有词元，无法区分信息的重要性。且最终有用的系统应是目标驱动的，而非仅仅是概率预测，这可能是当前gpt系列预训练方式一个较大的局限性所在。未来可以进行逆强化学习，从人类反馈中学习目标；或者进行多模态融合。
+
+训练效率
+语言模型普遍存在的另一个局限性是预训练期间的样本效率低下。虽然gpt-3在测试时样本效率方面向人类（单样本或零样本）更迈进了一步，但它在预训练期间看到的文本仍然比人类一生中看到的要多得多，提高预训练样本效率是未来工作的一个重要方向，未来可能通过提供额外物理世界信息，或通过算法改进来实现。
+
+few-shot原理的揭示
+这里存在一个问题：few-shot到底是“真正学习”了新任务，还是仅仅“识别”出了在预训练中已内化的任务？文中作者承认其不确定性，并认为即使只是“识别”，也是一个巨大的进步。在未来，理解少样本学习的工作原理也许本身就是一个重要的研究课题。
+
+推理与部署
+像gpt-3这样175B参数的大模型部署和推理成本极高，在某些场景也许难以投入实际应用。未来可以进行蒸馏方面的探索，将大模型的知识压缩到小模型中，为特定任务提供高效解决方案。
+
+可解释性
+不可解释性、校准性差（对不确定性的估计不准）、数据偏见。这些可看作是深度学习均有的问题，是阻碍AI可信赖、公平部署的核心障碍，尤其是偏见问题。
+
+
+
+参考资料
+
+《Language Models are Few-Shot Learners》
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>现代大模型架构</title>
+    <url>/2025/07/25/modelstructure/</url>
+    <content><![CDATA[架构图
+
+	
+
+将AE与AR模型同Transformer进行联系，那么Transformer的Encoder可看作为AE，而其Decoder（例如在文本翻译、文本续写这类NLG任务）可看作AR，而完整的类Transformer结构则是seq2seq。
+PS: 个人感觉此处可以再补充几点，Transformer的Decoder符合以下特征时，才是典型AR：
+
+目标是预测下一个token（基于前面的上下文）；
+模型结构硬性地只允许看“前面的 token”（使用 masked self-attention）；
+训练/推理是一步步进行的（逐步解码）。
+
+
+
+
+AR(Decoder-only)
+自回归模型，一般用于预测下一个词概率，擅长生成式NLP任务，AR模型使用注意力机制，预测下一个token。
+
+仅仅为单向编码（前向或者后向），不能进行双向上下文的充分理解；
+一些下游的语言理解任务一般需要双向的上下文信息（情感分析、句子匹配、段落理解），这导致AR语言模型与有效的预训练之间存在gap；
+缺点为需要大量文本数据进行x训练从而提高生成文本的高质量。
+
+
+
+
+AE（Encoder-only）
+自编码模型，一般用于自然语言理解任务，情感分析、句子匹配、段落理解等。
+
+使用双向self-attention，每个token在建模时能够访问整个序列中所有token的表示，不受顺序方向的限制；
+在使用MLM进行预训练时，有两个问题：
+
+1、基于其他token的信息重建mask部分的token，此时假设是各个被重建的mask部分是相互独立的，但是在实际的文本中，high-order依赖和long-range依赖是非常常见的。high-order: 比如The doctor who treated the patient later received an award for his work.中，被mask掉的词是doctor、patient、award、work，这时候AE模型并不会对doctor+patient+work-&gt;award这种高阶依赖关系进行捕捉，而是把这几个mask独立开，依赖于另外的词汇; long_range: 例如The doctor helped the patient before [MASK] left the hospital，需要建立一个entity-&gt;pronou的指代链条，AE模型没有刻意强化前后文之间的链式依赖，导致泛化性虽然增加，但是具体指代不准确；
+2、预训练基于MLM任务进行学习，但是在下游任务微调时，使用的是完整的输入，[MASK]的出现使得两个任务之间产生了distribution shift，h易导致 pretrain–finetune discrepancy问题；
+
+
+缺点是它无法直接生成文本输出，因此在需要生成文本的任务中不太适用。
+
+
+
+
+Encoder-Decoder
+Encoder-Decoder 架构的核心思想是利用编码器对输入序列进行编码，提取其特征和语义信息，并将编码结果传递给解码器。然后，解码器根据编码结果生成相应的输出序列。
+
+这种架构的优点是能够更好地处理输入序列和输出序列之间的关系，从而提高机器翻译和对话生成等任务的准确性。通常用于序列到序列（Seq2Seq）任务，如机器翻译、对话生成等；
+缺点是模型复杂度较高，训练时间和计算资源消耗较大；
+特点：输入输出分开encoder和decoder处理，encoder和decoder参数独立。
+
+
+	
+
+
+
+
+Causal-Decoder
+也称为因果解码器，属于Decoder only结构。
+
+输入和输出均为单向注意力。在生成新的输出时，只会考虑到之前的输出，而不会考虑到未来的输出，进行自回归训练；
+在处理需要全局上下文的任务时，它可能不如Prefix Decoder表现得好；
+与传统的transformer decoder相比，可以看作为简化版，去掉cross-attention和encoder，输入输出全部输入decoder。
+
+
+	
+
+
+
+
+Prefix-Decoder
+也称为非因果解码器，属于Decoder only结构。
+
+输入部分使用双向注意力，输出部分使用单向注意力。在生成新的输出时，会考虑到所有之前生成的输出；
+特点：Prefix Decoder在处理输入序列时，模型可以同时考虑序列中的所有词。生成输出时会考虑整个输入序列，而不仅仅是之前的输出。这使得它在处理需要全局上下文的任务时表现更好。训练阶段，通常使用自回归方式进行训练，即在生成当前词时，使用之前生成的所有词。Encoder和Decoder则共享了同一个Transformer结构，共享参数；
+代表模型：GLM、ChatGLM、ChatGLM2、U-PaLM；
+输入输出一起进入Decoder，只不过在处理输出部分时的时候让其满足causal-decoder的形式，进行自回归训练。
+
+
+	
+
+
+
+
+参考资料
+
+https://zhuanlan.zhihu.com/p/625714067
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Qwen技术报告阅读笔记</title>
+    <url>/2025/09/13/qwen/</url>
+    <content><![CDATA[Introduction
+QWEN（千问）是阿里发布的一个全面的LLM系列，涵盖了不同参数规模的各类模型，这些模型之间的关系网如下：
+
+	
+
+
+
+QWEN（基础预训练模型），使用多达3万亿tokens的多样化文本和代码数据进行了大规模预训练，涵盖广泛领域；
+
+
+QWEN-CHAT系列，包含Qwen-Chat和Qwen-Chat-RLHF，基于基础预训练模型QWEN，使用SFT + RLHF的技术进行微调，数据集涵盖任务执行、对话、安全性等各个方面；
+
+
+QWEN-CODE系列，基于Qwen基础模型，在大规模代码数据集上进行二次预训练，得到代码基础模型Code-Qwen，并进一步在一些代码生成、调试与解释相关的语料上进行微调得到Code-Qwen-Chat；
+
+
+阿里也专门设计了数学相关的LLM —— Math-Qwen-Chat，不论是7B还是14B的模型，在数学相关的benchmark上（例如GSM8K和MATH）都接近了GPT-3.5的表现；
+
+
+QWEN-VL系列，阿里开源了多模态预训练模型Qwen-VL和其微调版本Qwen-VL-Chat，在理解视觉与语言指令的多样化能力方面，于多个benchmark上超越了现有的开源视觉语言模型，并支持中英文的文字识别与视觉定位，还能实现多图对话和故事生成功能。
+
+
+
+
+
+Pre-training
+Pre-training Data
+为了构建一个有效且高质量的预训练数据集，阿里提供了一套全面的数据收集与预处理流程：
+
+
+首先，从多个source收集多样化的数据，包括网页、百科、书籍、代码，且保证多语言特性，其中大量为中文与英文，保证覆盖全球化和本土化应用；
+
+
+对于HTML网页数据，从其中抽取数据，并利用语言识别工具识别数据所属的语言；
+
+
+基于精确去重和模糊去重，避免数据集存在大量重复的信息。前者在对语料进行规范化（Normalization），例如统一格式、处理一些标点符号等操作后，如果文本完全相同则进行去重；后者则使用MinHash + LSH的方案进行重复文本匹配删除；
+
+
+对低质量或者有害数据进行过滤，使用基于规则和基于模型（质量评估模型 + 有害内容检测模型）两种方案进行过滤。此外，也会人工进行采样审核以确保质量；
+
+
+对优质数据进行上采样，使模型有更多机会基于优质的信息进行学习；
+
+
+在预训练时，加入多任务指令数据，已经有研究表明，在预训练中加入多任务指令学习能够提高模型的zero-shot和few-shot能力。
+
+
+
+Tokenizer
+使用OpenAI开源的分词库tiktoken中的cl100k base（GPT-3.5、GPT-4所使用的）作为基础分词库，这个库底层是基于BBPE算法进行tokenization的。
+针对中文和其他语言，特别补充了高频汉字和词汇的token，这种优化让Qwen 在中文场景下更高效，也更贴合多语言任务。
+此外，采用“数字拆分为单个字符”的策略。比如 “123” 会变成 “1 2 3 ”。原因是数字在推理、算术、代码任务中比较敏感，拆分后能提升泛化性和计算相关的准确性。
+最终扩展后的词表大小约152K，但是更大的词表并没有降低下游性能，而且在压缩效率（更少 token 表达更多信息） 方面优于很多模型，这样也能使得推理更为高效。
+
+	
+
+
+Model Structure
+Qwen的模型基于Transformer架构，选择在LLaMA架构上进行修改。
+
+
+使用Untied Embedding而不是Tied Embedding，使得输入输出需要训练两个不同的embedding权重，增大显存开销，但是这样输入输出可以学习到不同的语义映射方式，有可能能换取更好的性能；
+
+
+使用RoPE作为位置编码方案，但是在逆频率矩阵计算时采用FP32的精度，提升了模型的精度与性能表现；
+
+
+选择SwiGLU作为激活函数，此外，将FFN的放大倍数改为8/3（而不是4倍）；
+
+
+使用不用计算均值、更轻量的RMSNorm来代替LayerNorm，结合Pre-norm的形式，保证了Qwen的训练稳定。
+
+
+大多数的网络层去除bias，但是QKV注意力层保留了bias，用于增强模型的外推能力。这里苏神有在自己的博客中进行阐述，我们分析Key部分的bias，对于token：mmm和nnn不使用RoPE的注意力计算而言有：an=eqm⋅(kn+b)∑teqm⋅(kt+b)a_n= \frac{e^{q_m \cdot (k_n+b)}}{\sum_t e^{q_m \cdot (k_t+b)}}an​=∑t​eqm​⋅(kt​+b)eqm​⋅(kn​+b)​，可以拆分为：an=eqm⋅kn⋅eq⋅b∑teqm⋅kt⋅eqm⋅ba_n= \frac{e^{q_m \cdot k_n } \cdot e^{q \cdot b } }{\sum_t e^{q_m  \cdot k_t } \cdot e^{q_m \cdot b }}an​=∑t​eqm​⋅kt​⋅eqm​⋅beqm​⋅kn​⋅eq⋅b​。此处bbb与nnn无关，可以看出对于此处tokennnn对于tokenmmm的注意力计算而言，eqm⋅be^{q_m \cdot b}eqm​⋅b为一个常数，所以可以约掉。但是对于含有RoPE的注意力而言，会对Q和K进行旋转变换：an=e(qm+a)RmT⋅Rn(kn+b)∑te(qm+a)RmT⋅Rt(kt+b)a_n= \frac{e^{(q_m+a)R_m^T \cdot R_n (k_n+b)}}{\sum_t e^{(q_m+a)R_m^T \cdot R_t(k_t+b)}}an​=∑t​e(qm​+a)RmT​⋅Rt​(kt​+b)e(qm​+a)RmT​⋅Rn​(kn​+b)​，展开后得到：an=eqmRmTRnkn+aRmTRnkn+qmRmTRnb+aRmTRnb∑teqmRmTRtkt+aRmTRtkt+qmRmTRtb+aRmTRtba_n= \frac{e^{q_mR_m^TR_nk_n+aR_m^TR_nk_n+q_mR_m^TR_nb+aR_m^TR_nb}}{\sum_t e^{q_mR_m^TR_tk_t+aR_m^TR_tk_t+q_mR_m^TR_tb+aR_m^TR_tb}}an​=∑t​eqm​RmT​Rt​kt​+aRmT​Rt​kt​+qm​RmT​Rt​b+aRmT​Rt​beqm​RmT​Rn​kn​+aRmT​Rn​kn​+qm​RmT​Rn​b+aRmT​Rn​b​。可以发现，最终的bbb这几项都与RtRtRt相关，而RtR_tRt​是不同的，无法约掉，因此这部分bias最好进行保留。
+Qwen相关模型大小、架构以及超参数设置如下图所示：
+
+	
+
+
+Pre-training Method
+Qwen的预训练遵循自回归语言建模方法，即根据上下文来预测下一个token。
+训练时指定上下文长度为2048，在构建batch时，会对文档进行打乱与合并，然后截断到指定的上下文长度，避免模型按指定顺序看到数据。
+为了提高计算效率并减少显存占用，在注意力模块中采用了Flash Attention，Qwen的所有模型都使用BFloat16混合精度来保证训练稳定性。
+在优化器的选择上，Qwen与LLaMA相同，都使用了β1=0.9\beta_1=0.9β1​=0.9和β2=0.95\beta_2=0.95β2​=0.95的AdamW作为优化器。学习率调度采用cosine lr schedule，并且为每一个不同规模的模型都设置了峰值学习率，学习率按照schedule逐步衰减到峰值学习率的10%。
+
+Long Context
+基于Transformer结构的LLM在扩展上下文长度时有很大挑战，因为注意力机制的时间复杂度为O(n2)O(n^2)O(n2)，很容易OOM。Qwen在训练时采用2048的上下文长度，但是在应用时需要支持更长的上下文，因此引入一些技巧来解决。
+NTK-aware
+Qwen在推理时引入一种training-free的方法，即NTK-aware插值。对于普通的位置插值（Position Interpolation）而言，其进行简单缩放后，会丢失高频信息，影响长文本建模。而NTK-aware能够调整RoPE的基数，更好保留位置信息，更为稳定。
+为了进一步提升性能，Qwen中还实现了一种简单的扩展方法，即动态NTK-aware插值，通过 分段动态调整缩放，从而避免了性能的严重退化。
+两种注意力机制
+Qwen还结合了两种注意力机制：LogN-Scaling和Window Attention。Qwen团队还观察到，模型的长上下文建模能力在不同层次间存在差异：低层比高层对上下文长度扩展更敏感。基于这一观察，为各层分配了不同的窗口大小：低层使用较短的窗口，高层使用较长的窗口。
+
+Evaluation
+预训练Qwen的评估涵盖了7个常用的benchmark，在评估中，关注未经过Alignment的模型。结果表示，三种Qwen模型在所有下游任务中均展现了优异表现：
+
+	
+
+实验也验证了，Qwen采用的Dynamic NTK、LogN-Scaling和Window Attention技术能够在上下文长度增大时有效保持甚至提升模型性能。此处用困惑度来衡量模型性能：
+
+	
+
+
+
+
+Alignment
+Qwen使用了SFT + RLHF的方案进行Alignment，强化模型指令遵循能力以及有害内容过滤能力，使得模型输出更符合用户意图。
+SFT
+SFT Data
+传统的数据集一般包含大量的Prompt（带有questions,、instructions和answers），但是Qwen团队进一步标注了一种human-style conversations，模型学习的不再是孤立地回答一个问题，而是如何在多轮交互中持续地、有上下文地提供帮助，提升了模型的对话记忆、推理以及主动引导能力，也使得模型的回答看起来“更有人味”。
+而为了在用户进行各类方式提问时不限制模型的能力，Qwen团队对Prompt模版格式化数据进行删除，这些僵化、固定的格式数据会引导模型对高度结构化的信息进行学习，影响其泛化能力。
+Qwen团队发现，在训练阶段，数据的“组织方式”和数据的质量同等重要，即使拥有高质量的人工标注数据，如果以错误的方式喂给模型，最终性能也会大打折扣。
+为了解决这个问题，Qwen团队采用了OpenAI提出的ChatML（Chat Markup Language）格式，这是一种结构化的元数据标记，将对话的角色清楚的标记出来，例如：
+
+	
+
+在训练时引入这类标签，模型通过学习将这种模式内化，推理时，用户只需要输入自然语言指令，将这些指令添加上ChatML模板后提交至模型，而后输出回复内容。Qwen团队在技术报告中也提到了类似的方案Anthropic，其利用\n\nhuman和\n\nassistant来区分user和assistant，但是由于这些特定短语是常见词汇，模型可能难以区分其他上下文中的这些词汇。
+Training
+采用与预训练相同的自回归学习方法，在ChatML的数据格式上，对于对系统和用户输入部分应用损失掩码，使模型重点关注assistant输出部分。使用β1=0.9\beta_1=0.9β1​=0.9、β2=0.95\beta_2=0.95β2​=0.95、ϵ=10−8\epsilon=10^{-8}ϵ=10−8的AdamW作为优化器. sequence length限制为2048，batch size为128。训练共进行4000个epoch，学习率在前1430个epoch内逐步提升至峰值2×10−62 \times 10^{-6}2×10−6。为防止过拟合，采用0.1的weight decay、0.1的dropout和1.0的gradient clip。
+
+RLHF
+SFT虽然有效, 但是容易过拟合导致泛化性有限. Qwen团队使用了RLHF进一步与人类偏好进行对齐。
+Reward Model
+和InstructGPT利用GPT-3微调得到Reward Model相比, Qwen则是像训练一个完整的大模型一样采用预训练+微调的方案构建一个Reward Model. 其中的预训练模型步骤称为偏好模型预训练(PMP), 这一步骤需要大量的数据进行对比学习, 即给定一个query, 数据包含两个不同的response(A/B), 且包含人类对这两个response的偏好标注。 预训练基于这类数据让模型初步、广泛地学习“什么是好，什么是坏”。这个数据集可能混合了来自不同领域、不同风格的偏好数据。
+而在微调阶段, 则使用标注质量更高的数据进行训练，类似的，Qwen团队收集各类Prompt，让人类根据Qwen模型输出的回答进行反馈，用这些反馈来调整Reward Model。为了保证Prompt的多样性与复杂性，Qwen团队对Prompt所属任务类型创建了一个大约包含6600个详细标签的分类系统，并实施了一种平衡采样算法，该算法在选择Prompt供奖励模型训练时，同时考虑多样性和复杂性。
+微调时为了让这些Prompt得到更为多样的response，Qwen团队使用了不同大小的Qwen模型和不同的解码采样策略，从而使得模型生成更为多样的回复。Qwen团队使用与待Alignment的模型大小一致的Qwen作为初始化的Reward Model。
+Qwen团队在Reward Model的原始模型结构中加入了池化层，lr恒定为，批次大3×10−63 \times 10^{-6}3×10−6，batch size为64。sequence length设为2048，训练进行单个epoch。
+Reinforcement Learning
+Qwen使用PPO，其中涉及四个模型：
+
+
+Policy Model：这是要训练的主要模型，根据Prompt生成response，在训练过程中，该模型进行学习以生成更高奖励的response；
+
+
+Reward model：接收一个Prompt和Policy Model生成的response，并给出一个Score，在PPO中该模型参数冻结；
+
+
+Value Model：估计给定Prompt的预期累积奖励（价值）。这个估计值用于帮助更新策略模型，判断当前生成的回复是比预期更好还是更差；
+
+
+Reference Model：通常是最初始的模型，其参数在PPO中完全冻结，作用是为PPO过程提供一个基准。
+
+
+在正式进行PPO迭代之前，先暂停Policy Model的更新，只用初始的奖励信号在50个epoch内训练Value Model，使得Value Model先学会准确地估计状态预期价值。
+双响应采样
+对于训练集中的每一个Prompt，策略模型同时生成两个不同的response。这种方法提供了更多样化的数据供策略学习，类似于在同一个问题上尝试两种不同的解题思路然后得到反馈。内部实验证明，这种策略比只生成一个回复更有效，可能因为它能更好地探索策略空间，减少训练方差。
+
+还有一些超参数相关设置：KL散度系数设为0.04、使用运行均值对奖励进行归一化、：使用了低学习率(Policy: 1e-6, Value: 5e-6)、进行价值损失裁剪（clip=0.15）、解码策略使用0.9的Top-p而不是完全随机。
+Alignment Tax
+RLHF使得LLM获得了符合人类期望的能力，但是这个过程中可能是LLM遗忘以往学习到的多样性能力（代码生成、数学推理等），KL散度惩罚应对阅读理解与常识理解部分能力的衰退已足够，但是对于这部分精细化能力的衰退还是无能为力。
+Qwen团队为了缓解Alignment Tax，在PPO的损失函数上额外加入一个来自预训练数据的损失项，这相当于一种“正则化”，不断提醒模型保持其原有的广泛语言能力和知识，从而有效减轻对齐税，这个环节需要远大于PPO所需偏好数据量的预训练数据。
+
+Evaluation
+实验将三种不同的Qwen微调模型和GPT-4这四种模型同GPT-3.5进行对比试验，由图可知，RLHF后进行Alignment的模型性能更好：
+
+	
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Prefix Tuning -《Prefix-Tuning:Optimizing Continuous Prompts for Generation》论文阅读笔记</title>
+    <url>/2025/11/07/prefixtuning/</url>
+    <content><![CDATA[Introduction
+在“大模型的下游任务适配”这个方向上，研究者已经开发出来若干种可用的方案，例如全量微调（finetune），但是这类方法对于大规模模型所需的计算量过大；也有类似Adapter-tuning的方法，冻结大部分参数，只添加少量可训练的层，通常能够以2–4%的参数接近全量微调的性能；而GPT-3则使用了更极端的方案——只依赖Prompt Design进行in-context learning。
+Hard Prompt Design &amp;&amp; Prefix-tuning
+一般人工进行Prompt Design对模型进行引导通常具有如下的局限性：
+
+Prompt表达能力有限，只能用现成词表中的单词组合表达条件，同时，这种离散的Prompt空间也难以进行优化；
+模型难以理解指令，类似于“请生成文章的摘要”这类的Prompt在人类看来已经足够清晰，但是对于模型而言可能并未如此，这也是为什么这类方案的效果时常有效。
+
+Prefix-tuning的思想则是：与其费力寻找离散的词，不如直接优化连续的embeddings，即在模型的输入前加入可训练优化的embedding序列，也即“Prefix”。根据这个特点，可以只为每一个下游任务学习一个“Prefix”而不是全量finetune，这样只需要推理时在输入前加上这个“Prefix”，便实现了下游适配。
+
+    
+
+
+
+
+模型任务适配
+对基于Transformer架构的自回归模型来说，训练时，在某个“隐态层”上，我们将“Prefix”直接加在输入的前面，如下图所示，h1h_1h1​、h2h_2h2​是直接添加的“Prefix”，h3−15h_{3-15}h3−15​则是正常输入和输出的拼接，可描述为：z=[PREFIX;x;y]z = [PREFIX;x;y]z=[PREFIX;x;y]。
+
+    
+
+对基于Encoder-Decoder结构的模型（如BART）来说，训练时，在Encoder和Decoder中的某个“隐态层”上，我们都分别将“Prefix”直接加在输入和输出的前面，如下图所示，h1h_1h1​、h2h_2h2​是直接添加在Encoder中的“Prefix1”，h9h_9h9​、h10h_{10}h10​是直接添加在Dncoder中的“Prefix2”，可描述为：$ z =[PREFIX;x;PREFIX;y]$。
+
+    
+
+
+
+
+Training
+将最终需要加上去的若干个Prefix向量表示为一个矩阵：PθP_{\theta}Pθ​，所有需要训练的参数即为θ\thetaθ，这个矩阵可能会非常大。作者发现，如果我们将梯度用于直接训练这个向量矩阵PθP_{\theta}Pθ​会很不稳定并导致性能有小幅度地下降，因为这种直接优化PθP_{\theta}Pθ​的形式，对于初始化和学习率设置都非常敏感。
+于是文中使用了一种重参数化的技巧，假设PθP_{\theta}Pθ​维度为n×dn \times dn×d，那么每一个Prefix向量Pθ[i,:]P_{\theta}[i,:]Pθ​[i,:]维度则为1×d1 \times d1×d。而后引入一个更低维的向量Pθ′[i,:]P&#x27;_{\theta}[i,:]Pθ′​[i,:]，其维度为1×d′,d′&lt;d1 \times d&#x27;, d&#x27; \lt d1×d′,d′&lt;d，再引入一个较大前馈网络MLPθMLP_{\theta}MLPθ​，最后我们可以由：Pθ[i,:]=MLPθ(Pθ′[i,:])P_{\theta}[i,:] = MLP_{\theta}(P&#x27;_{\theta}[i,:])Pθ​[i,:]=MLPθ​(Pθ′​[i,:])得到我们需要的PθP_{\theta}Pθ​，在训练时，Pθ′P&#x27;_{\theta}Pθ′​和MLPθMLP_{\theta}MLPθ​都需要进行更新，训练结束后，我们只需要拿到最后的结果PθP_{\theta}Pθ​即可。
+作者也在文中阐述了这样做的合理性：Aghajanyan等人在2020年发表的著作《Intrinsic dimensionality explains the effectiveness of language model fine-tuning》中写道，模型参数存在几个主要的内在方向（Intrinsic Dimension），在这些方向上进行低维训练也能达到与全量微调几乎一致的效果，作者将这种观念迁移到了PθP_{\theta}Pθ​的学习上。
+任务选择
+在文章中，作者主要关注两个任务：
+
+
+输入线性化的数据表，输出该表的文字描述，数据集使用了E2E, WebNLG, DART，模型为GPT-2；
+
+
+输入是一篇文章，输出的是该文章的简短摘要，数据集使用了XSUM，模型为BART。
+
+
+具体如下图所示：
+
+    
+
+
+
+
+一些实验结果
+不同适配方案的表现
+在table-to-text的任务中，Prefix-tuning只需要0.1%0.1\%0.1%的参数，性能超过了Adapter-tuning，与全量微调一致甚至超过其性能表现。
+
+    
+
+在summarization任务中，Prefix-tuning的表现略逊于全量微调，但是性能上相差不算过大，结合其极小参数量训练的优势，也具有一定的应用场景。
+
+    
+
+
+低数据量下不同适配方案的表现
+由于所需参数量更小，较小的数据集也能够在Prefix-tuning上产生较好的泛化能力，适配表现更好。而相比之下Finetune远大于Prefix-tuning的参数量也带来了远超过后者的数据量需求，否则会出现欠拟合的现象。
+
+    
+
+
+模型外推（Extrapolation）能力
+作者设置了两种不同的跨领域测试实验，1、将模型在新闻类数据上训练，而后在体育类数据上测试（news-to-sports），属于跨领域外推；2、在新闻类数据集中挑选不同的主题数据进行训练和测试（within-news），属于领域内外推。实验结果证明，Prefix-tuning这种模式相比于全量微调，具有更好的外推能力。
+
+    
+
+
+消融实验
+Prefix Length
+作者探究了Prefix长度对模型性能的影响，实验结果表示，过大过小的长度都会影响模型的表现，模型表现会随着长度到达一定值后达到峰值。
+
+    
+
+同时，作者发现，一般随着Prefix长度的增加，模型的推理速度并不会受到太大的影响，因为所有Prefix的Attention计算在GPU中都是并行的。
+Full vs Embedding-only &amp;&amp; Prefixing vs Infixing
+作者对比了两种Prefix-tuning的方法：
+
+Full：每一层上都设置可训练的Prefix，这意味着Prefix可以干预每一层的Attention计算；
+Embedding-only：只在Embedding层设置可训练的Prefix，后续的计算随着每一层的前馈自动进行。实验结果表示，Full相比于Embedding-only拥有更好的表现。
+
+同时，作者设置了一个挺有意思的实验，将trainable的向量放在不同的上下文位置，prefixing：[PREFIX;x;y][PREFIX;x;y][PREFIX;x;y]，infixing：[x;INFIX;y][x;INFIX;y][x;INFIX;y]，实验结果表示Prefixing的性能略好Infixing。作者简单提到是因为Prefix能够影响x和y的激活表示，而Infix只能够影响到y的激活表示，这里其实和自回归性质的LM有关，自回归的训练方法决定了Prefix的放置方法在计算Attention时影响范围更广。
+
+    
+
+初始化
+作者在少数据量的情况下讨论了Prefix的初始化问题，发现如果使用随机初始化（通常是从高斯分布或均匀分布中随机采样数值）会导致模型表现性能差和方差大两个问题
+针对这个问题，作者用真实单词在预训练模型中的激活值（Embedding 或 隐层状态）作初始化选择，最后发现，不同的方案初始化后模型性能由低到高分别为：随机初始化、任务无关的实词、任务有关的实词。因为这些真实的单词更符合预训练模型中的语义空间分布，这样Prefix更容易融入基础预训练模型的知识体系内，不易破坏当前LM的知识结构。
+
+    
+
+
+
+
+参考资料
+
+《Prefix-Tuning:Optimizing Continuous Prompts for Generation》
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Prompt Tuning -《The Power of Scale for Parameter-Efficient Prompt Tuning》论文阅读笔记</title>
+    <url>/2025/10/25/ptuning/</url>
+    <content><![CDATA[Introduction（Hard Prompt &amp; Soft Prompt）
+自大模型出现以来，各路研究人员都在寻找合适的方案讲这些模型适配到下游任务重，例如Peters等人提出的ELMo则冻结预训练模型参数，只学习其中各层表示进的特定任务加权。但是自 GPT 和 BERT 出现以来，最主流的下游任务适配方法变成了模型微调（finetune），即在下游任务中重新调整全部模型参数。
+在GPT-3的技术报告中，作者通过Few-shot的方式对GPT-3进行In-context Learning，从而向我们展示了Hard Prompt设计在模型下游任务适配上的可能性（这里关于Hard Prompt和Soft Prompt的区别推荐观看这篇综述文章：提示学习Prompt Tuning：面向研究综述）。
+但是这些Hard Prompt的方法都存在几个关键的不足之处：
+
+需要人为不断调试，Prompt编写容易出错；
+模型的上下文长度限制，导致了Prompt的长度也受到限制，意味着Prompt能表达的下游任务信息也受到了限制；
+受到上面两点的限制，Hard Prompt-based的模型在下游任务中的性能仍明显低于全参数微调模型。例如，GPT-3（175B）在 SuperGLUE 上的 few-shot 表现比 finetune 后的 T5-XXL（11B）低了 175 分，即使GPT-3的参数比后者多了 16 倍。
+
+知道了Hard Prompt的不足之处，一些研究人员开始着手设计基于Soft Prompt（也可以叫Continuous Prompt）的适配方法，简单来说，就是把Prompt的生成本身作为一个任务进行学习，经典的有类似“Prefix Tuning”这类方法，且这类Soft Prompt方法最后可以利用“不同下游任务Prompt + 冻结原始模型”的方案适配不同的下游任务，保留了原始模型的部署高效性，如下图所示。而本文提出了一种名为“Prompt Tuning”的方案，可看作为Prefix Tuning的简化形式。
+
+    
+
+
+
+
+任务描述
+作者使用的是T5T5T5模型，也遵循其中“text-to-text”的方法，将原本的模型分类任务Pr(y∣X)Pr(y|X)Pr(y∣X)（y为一个类别label）建模为Prθ(Y∣X)Pr_{\theta}(Y|X)Prθ​(Y∣X)（Y为一个类别label的token序列）。
+GPT-3中，Prompt Token是由固定的词汇表得到的，模型的参数θ\thetaθ也是冻结的，此时，生成任务可建模为Prθ(Y∣[P;X])Pr_{\theta}(Y|[P;X])Prθ​(Y∣[P;X])。此时如果想要找到最优的Prompt，则需要使用人工搜索/不可微分的搜索方法。
+而Prompt-tuning则消除了这种“固定参数θ\thetaθ”的限制，使得Prompt拥有可更新的参数θP\theta_PθP​。具体来说，相比于原来“从词表中抉择如何选取token”而言，Prompt-tuning则是固定token的选择，而不断学习它们的embedding，此时生成任务可以建模为Prθ;θP(Y∣[P;X])Pr_{\theta; \theta_P}(Y|[P;X])Prθ;θP​​(Y∣[P;X])。此时不再需要人工进行搜索，而是可以通过反向传播在主模型参数θ\thetaθ冻结的情况下，更新参数θP\theta_PθP​。
+下面对Prompt-tuning的任务进行详细描述：输入的nnn个token序列为{x1,x2,...,xn}\{x_1, x_2, ..., x_n\}{x1​,x2​,...,xn​}，而后将这nnn个token通过原有模型的embedding变为维度为eee的向量Xe∈Rn×eX_e \in \mathbb{R}^{n \times e}Xe​∈Rn×e。可调的Soft Prompt表示为Pe∈Rp×eP_e \in \mathbb{R}^{p \times e}Pe​∈Rp×e，ppp意味着Prompt Token序列的长度，后续训练中直接使用梯度更新这个矩阵PeP_ePe​。最后训练收敛后，输入数据可以按“Prompt + Input”拼接为[Pe;Xe]∈R(p+n)×e[P_e;X_e] \in \mathbb{R}^{(p+n) \times e}[Pe​;Xe​]∈R(p+n)×e。
+对于PeP_ePe​的初始化而言，我们可以选择随机初始化从0开始训练；也可以将每个 Prompt Token 初始化为模型词表中某个词的 embedding；对于分类任务而言，因为我们希望模型在输出中生成这些类别的token sequence，用那么我们也可以用合法label token sequence的 embedding 来初始化 prompt 可以帮助模型倾向于生成正确类别的输出。
+
+
+
+T5T5T5中的Span Corruption
+T5T5T5基于Span Corruption（片段掩码）任务进行训练，例如给定一个句子：Thank you for inviting me to your party last week。
+我们可以构建数据对：
+
+输入：Thank you &lt;X&gt; me to your party &lt;Y&gt; week；
+输出：&lt;X&gt; for inviting &lt;Y&gt; last &lt;Z&gt;。
+
+其中的&lt;X&gt;、&lt;Y&gt;、&lt;Z&gt;都是Sentinel Token，这是一种特殊标记。由于这种标记的存在，使用这种方法进行预训练，模型从未见过真正自然的输入文本，也从未见过真正自然的输出文本，比起进行自回归语言建模预训练，这种方法会产生一定的“非自然语言输出倾向”。
+对于这种“非自然语言输出倾向”，一般的finetune能够调整模型所有参数，改变模型的输出风格与偏好，能够很有效地消除这种不自然。但是对于Prompt-tuning而言，并不会对原模型参数进行调整，无法改变模型的先验，只能在现有风格上做微小引导，极大可能保留这种不自然，从而影响模型表现。为了探究这一个问题，于是作者使用三种方案展开了对比实验：
+
+
+Span Corruption：直接使用原版预训练 T5 作为冻结模型；
+
+
+Span Corruption + Sentinel：在下游任务的输出中也手动加 sentinel 特殊标记，使其更接近预训练目标格式；
+
+
+LM Adaptation：继续在自然语料上训练 T5，让模型使用类似 GPT-3 的自回归方式进行再训练，这个方案只需执行一个epoch，就能得到一个可以在任意任务上 Prompt-tuning 的模型。
+
+
+作者希望通过这种LMAdaptationLM AdaptationLMAdaptation的方式将T5转换为更像GPT-3这样的模型，能够具有更强的自然语言能力，对应地也就对Prompt的影响更为敏感。但是相比于GPT-3的从零开始的自回归预训练，这种方案相当于后期再训练，是否能够在性能上真正替代前者尚未确定，所以作者不只是将LM Adaptation进行一个epoch，而是测试了不同的epoch数，上限为100K。
+
+
+
+对比实验
+下图展示四种模型适配方法的对比实验，其中绿色曲线代表默认配置的Prompt-tuning，其中LM Adaptation Step为100K、使用类别标签embedding初始化PeP_ePe​、Prompt Token Sequence长度为100。每个任务分别训练一个Prompt，实验在SuperGLUE上进行评估，纵轴为评估分数，横轴为模型参数量:
+
+    
+
+可以看到，随着模型参数量的增大，Prompt-tuning的性能和Model Tuning(finetune)的性能差距越来越小，且远远超过Prompt Design(Hard Prompt)。在模型参数量达到T5-XXL（11B）的规模时，Prompt-tuning以远远小于Model Tuning的训练量获得了几乎一致的性能，且在T5-Small(60M)和T5-Large(770M)上进行Prompt-tuning的模型表现也比在GPT-3 XL(1.3B)和GPT-3(175B)上使用Prompt Design要更好。
+
+
+
+消融实验
+文中从三个维度进行Prompt-tuning的消融实验，实验结果具体如下图所示：
+
+    
+
+
+
+
+Prompt 长度
+在不同规模的模型上分别用不同长度的Prompt进行Prompt-tuning，分别设置为1、5、20、100、1501、5、20、100、1501、5、20、100、150，如上图(a)所示，相比于长度为1的Prompt，更长的Prompt能够取得更好的表现。值得注意的是，对于XXL规模的模型而言，Prompt长度为1似乎也能获得不错的效果，这可以侧面反映一个现象：即模型越大，实现较好下游任务性能所需要的提示越少，因为模型本身已经容纳了足够的知识量。另一方面，从实验来看，长度为20后再往后提升Prompt长度似乎对模型性能的提升没有产生明显效果，甚至有负面影响。
+
+Prompt 初始化
+在不同规模的模型上分别用不同方式初始化embedding的Prompt进行Prompt-tuning，如上文所述，包括随机初始化（在[-0.5, 0.5]区间均匀采样）、从词表中采样（从T5的词表中最常用的5000个token中选取）、基于类别标签初始化（这里具体的做法是：对下游任务的每个类别，取其文本形式对应的 embedding 用作 prompt 中的一部分；如果类别文本由多个 token 组成，则取平均，如果 Prompt 比类别数长时，剩余 token 从词表中采样）。
+如图(b)所示，我们可以看出，基于类别标签初始化进行Prompt-tuning的效果最好，且在小规模模型上表现出的各方案的性能差异到了大规模模型上都几乎消失了，这里应该也和大规模模型海量的知识有关。此外，作者还发现，使用类别标签初始化训练后，最后的Prompt Token Embedding向量语义仍然与初始的类别向量语义十分靠近，只是整体的Prompt经过训练后已经无法解释了。
+
+预训练目标
+图©在前文所述的Span Corruption、Span Corruption + Sentinel和LM Adaptation三种方案得到的预训练模型上进行Prompt-tuning，并对比性能。可以看出T5这种Span Corruption预训练出来的模型完全不适合进行Prompt-tuning，哪怕在下游任务中主动迎合偏好，加上特殊标记符号，效果也不尽人意。而按照自回归预方法对T5模型进行100K epoch的再训练则明显取得了更好效果，且由图(d)可知，epoch轮次越大效果越好。作者还提到，对于规模较大的模型，即使原本的预训练目标不适合Prompt-tuning，仍然能够通过 Prompt 得到正常、合理的输出，但是对于中小规模的模型来说，可能就会学不会任务甚至全错。
+
+
+
+与其他适配方案训练参数量的对比
+
+    
+
+
+
+
+领域迁移的鲁棒性
+作者在两个任务上研究zero-shot的领域迁移问题。对于同一个任务，在一个领域A数据集上进行训练，而后在领域B数据集上进行相同的任务验证其性能根据实验结果，发现在领域差异更大的情况下，Prompt-tuning的收益更大，一般的模型微调对模型大部分甚至全部的参数进行训练，更容易过拟合所训练的下游任务，不利于相似任务在不同领域的迁移。
+
+    
+
+
+    
+
+
+
+
+Prompt 集成
+神经模型在相同数据上以不同初始化训练后再进行集成通常可以提升任务性能，并且将各个模型的表现进行对比有助于估计模型的不确定性。然而，随着模型规模变大，模型集成会变得不切实际。除了需要存储 N 份模型，在推理时还需要运行 N 个独立模型，这会导致非常高的计算成本。而Prompt-tuning则提供了十分高效的集成方案，通过在同一任务上训练 N 个不同的 Prompt，我们实际上得到了 N 个“任务专用模型”，但它们共享底层语言模型的所有参数。
+文中进行了相关的实验验证集成Prompt的性能，对于同一个任务而言，训练得到5个Prompt，并将输入也复制5份，拼接得到一个batch的数据：{[P1;X1],[P2;X2],[P3;X3],[P4;X4],[P5;X5]}\{[P_1; X_1], [P_2; X_2], [P_3; X_3], [P_4; X_4], [P_5; X_5]\}{[P1​;X1​],[P2​;X2​],[P3​;X3​],[P4​;X4​],[P5​;X5​]}，进行一次forward后，采用简单多数投票进行集成，实验结果如下表所示，结果证明：Prompt集成模型均优于以下几种方案：
+
+单独使用一个Prompt；
+多个Prompt单独性能的平均；
+单独使用的Prompt中最好的性能.
+
+
+    
+
+
+
+
+Prompt 可解释性
+一般来说，一个可解释的 Prompt 应该是自然语言写成的，清晰地描述任务，明确要求模型进行某种输出，使我们可以理解模型为什么会得到特定行为。但 Prompt-tuning 工作在连续 embedding 空间中，而非离散词空间，因此非常难进行解释。
+文中为了探索这种Soft Prompt的可解释性，计算了每一个训练得到的Prompt Token在词表中余弦距离最近邻的词，结果发现：每个 Prompt Token 的前 5 个最近邻词会形成语义聚类，例如词汇上就一致的：{Technology / technology / Technologies / technological / technologies}。 或是词汇上不相似但是具有强语义联系的： {entirely / completely / totally / altogether / 100% }。这说明Soft Prompt也学会了一定的类词汇级别的语义信息。
+当Prompt-tuning使用类别标签初始化时，作者发现，在训练后这些类别标签往往仍保留在这些Soft Prompt的最近邻词中，证明这些Prompt记忆了这些类别信息。
+如果Prompt长度很长，会发现多个位置学到的语义重复，这可能意味着：1、Prompt 的容量过大，产生冗余；2、Prompt 序列中缺乏结构，模型不能很好地将所需要的信息定位到特定位置，这似乎也解释了前文实验中为什么过长的Prompt并不能提升模型性能，甚至产生负面作用。
+
+
+
+参考资料
+
+《The Power of Scale for Parameter-Efficient Prompt Tuning》
+https://zhuanlan.zhihu.com/p/524383554
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>LLM常见的位置编码</title>
+    <url>/2025/07/25/pe/</url>
+    <content><![CDATA[为什么需要位置编码？
+大模型在处理序列数据时，其内部的注意力机制是内容驱动的，只关注token的相似度，无法感知到token的位置信息，因此需要引入额外的信息来表达token所在的空间信息。
+
+
+
+sinusoidal位置编码
+
+	
+
+sinusoidal位置编码基于embedding的维度d和其维度中具体的索引i以及token的位置pos进行编码。具体的，同时使用sin和cos的值，这样能够避免周期导致的值相等混淆了模型对于位置的理解。编码反映了token之间的相对关系而不是绝对关系，编码的差值与token位置的差值有关，且相邻的token编码值也相差较小：
+
+	
+
+这里由公式可以得知，对于不同索引的维度，维度索引越大，频率越大，周期越短。对于低频情况，周期较长，同一个句子中的首尾token位置编码可能在这种周期下呈现较小的位置差异，这能够体现偏全局的位置信息，如这两个token处于同一个句子的信息；而高频周期较短的情况下，变化更为剧烈，值变化相对较大，对于相邻位置之间的微小差异更为敏感非常适合捕捉“token紧邻的顺序信息”。
+
+
+
+旋转位置编码（RoPE，Rotary Position Embedding）
+sinusoidal编码对于相对位置的建模比较间接，而RoPE则是一种更为直接的相对位置建模方法。传统的方式是将编码直接加到token embedding上，这样在计算注意力分数时仍然是依赖于两个token各自的位置， 并不会引入两个位置的差值。
+
+	
+
+而RoPE则是将位置信息编码进注意力机制中Query和Key向量的角度中，用复数旋转或2D旋转的方式，引入“相对位移”信息，最后的注意力分数与位置的差值相关：
+
+	
+
+RoPE相比于传统的正余弦编码，具有更强的外推能力。传统的正余弦编码每个词都有一个基于「第几位」的编码，比如第 1 位、第 99999 位，如果模型只见过最多第 1000 位，那么遇到第 99999 位时就会很懵逼，注意力分数变得不稳定，其他token“不知道”是不是该关注这个位置的内容。而RoPE只关注位置差值，一定程度上增加了模型的外推泛化能力。
+PS：个人疑问，如果说正余弦编码中，模型是因为无法看到没有出现的位置的token而导致注意力分数计算出现偏移，那使用RoPE也会出现差值范围的不一致，是否也会导致模型出现一定的分数计算偏移呢？（当然整体来说RoPE外推能力肯定更强）
+
+
+
+ALiBi（Attention with Linear Biases）
+上述内容提到，正余弦编码方式下外推能力比较弱。即使旋转位置编码比正弦方法有所改进，但仍未达到令人满意的结果。
+ALiBi不显式修改embedding，而是直接在Attention Score上加「线性偏置」，让模型天然关注距离近的token，同时根据m每一个注意力的head会乘上一个预设好的斜率项(Slope)：
+
+	
+
+
+	
+
+也就是说这种编码方法不像之前两种方法一样涉及模型的理解问题，而是简单在已有的分数上进行惩罚。
+
+
+
+可学习位置编码
+直接将不同token的不同维度的enbedding的位置编码当成可学习的参数（大力出奇迹）。
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MoE —《OUTRAGEOUSLY LARGE NEURAL NETWORKS:THE SPARSELY-GATED MIXTURE-OF-EXPERTS LAYER》论文阅读笔记</title>
+    <url>/2025/09/04/moe/</url>
+    <content><![CDATA[Introduction
+深度学习的成功依赖于两个因素：更大的模型与更多的数据。但是对于典型的深度学习模型而言，每一个训练样本都会激活整个模型参数，随着模型规模和数据规模的增大，这些计算量的增长是爆炸式的，看起来似乎令人不太可接受。
+为了应对这种问题，研究人员提出了各类形式的“条件计算”，即让每个样本只激活模型的一部分参数，哪些部分被激活由门控机制决定。而目前为止，却还没有人在这些方法上面得到模型容量、训练时间或模型质量等层面的巨大提升，这主要涉及以下几个原因：
+
+GPU擅长于矩阵运算，不擅长“分支逻辑”，这类条件计算方案对于GPU的利用率大大降低；
+条件计算方案使得不同样本的训练路径不同，没有办法进行大批量训练，会影响模型的性能与训练的成本；
+GPU的算力增长速度很快，由显卡型号的迭代可以看出这一点，但是GPU之间的通信带宽却增长十分缓慢，这会影响多卡场景下的模型训练。比如：当token进行embedding时，它放置在GPU0上进行forward，但是如果整个词表非常大的话，embedding权重可能会被切分至不同的GPU进行保存，那么该token明明只需要进行一次很简单的计算，却可能需要跨卡间进行通信调取对应位置的权重，导致模型计算效率大打折扣；
+在条件计算里，并不是天然就能保证“每次只激活少量子网络，而且还分布均匀”，如果不控制，门控机制可能会出现极端情况：如某些门控被几乎所有输入都选中，导致计算压力集中在少数子网络上义，这类问题无疑会影响模型的质量。所以训练时需要在损失函数里加入额外的正则化项，强制约束门控的分布，让它每个输入只激活很少几个子网络，且不同子网络都能分到差不多的工作量；
+对于一些亿级参数的模型而言，之前的工作都是在一些几十万的小数据集上进行训练，似乎并不太支持将这样的大模型训练好。
+
+这篇文章提出一种稀疏门控混合专家层（Sparsely-Gated Mixture-of-Experts Layer, MoE），MoE由多个“Expert”组成，每一个Expert都是一个简单的FFN，同时有一个可训练的门控网络，用来选择稀疏的Expert组合来处理每一个输入，网络的所有部分都能够通过BP进行训练。文章中重点关注语言建模和机器翻译任务，这些任务更倾向于从一些超大规模模型上得到更好的表现。
+
+    
+
+由上图可知，MoE层由一组nnn个Expert网络E1...EnE_1...E_nE1​...En​以及一个门控网络GGG组成，门控网络输出为一个稀疏的nnn维向量，那么对于一个输入xxx而言，MoE层的输出可以表示为：y=∑i=1nG(x)iEi(x)y=\sum_{i=1}^nG(x)_iE_i(x)y=∑i=1n​G(x)i​Ei​(x)。
+当G(x)i=0G(x)_i=0G(x)i​=0时，就不需要计算Ei(x)E_i(x)Ei​(x)。在文章实验中，Expert数量可以达到上千个，但是每个样本只需要分配少量的Expert，如果Expert数量实在非常庞大，我们也可以通过两层MoE进行降低分支参数（branching factor），即选择一个Expert组合，其中每个Expert也是一个MoE。
+
+
+
+一些门控机制
+Softmax Gating
+最基础的一种MoE Gating方法，xxx经过线性层后直接进行Softmax，这样会为每个Expert都分配一个权重，但是是非稀疏的，没有节省计算量：G(x)=Softmax(xWg)G(x)=Softmax(xW_g)G(x)=Softmax(xWg​)。
+
+Noisy Top-K Gating
+文章在Softmax Gating中引入了两个点：稀疏性和噪声。首先，在应用Softmax之前，加上可学习的高斯噪声：H(x)i=(xWg)i+StandardNormal()⋅Softplus((xWnoise)i)H(x)_i=(xW_g)_i+StandardNormal()\cdot Softplus((xW_{noise})_i)H(x)i​=(xWg​)i​+StandardNormal()⋅Softplus((xWnoise​)i​)，其中Softplus(x)=log(1+ex)Softplus(x)=log(1+e^x)Softplus(x)=log(1+ex)，这个函数类似于一个平滑版本的ReLU，呈现单调递增且永远为正的特性，可以保证训练出来的噪声方差始终为非负，用于控制噪声的“强度”。
+而后，选择Top-K个Expert，其他的设置为−∞- \infty−∞：KeepTopK(v,k)i={vi−∞KeepTopK(v,k)_i=\left\{\begin{matrix}v_i \\- \infty \end{matrix}\right.KeepTopK(v,k)i​={vi​−∞​。最后在Softmax后，选择部分成功激活，而其他部分则为0：G(x)=Softmax(KeepTopK(H(x),k)G(x)=Softmax(KeepTopK(H(x),k)G(x)=Softmax(KeepTopK(H(x),k)。
+
+
+
+Training
+这里与其他部分一起，使用BP来训练门控网络，在BP时少量Expert的梯度非零，换个说法，模型梯度在大部分都不是很敏感。这种机制与带噪声的ReLU函数相似（Noisy ReLU），ReLU小于等于0时不激活，大于0时则激活，Noisy ReLU通过在小于等于0部分引入噪声，使得这一部分也有机会进行梯度回流，与此处门控网络加入噪声，使得部分Expert有机会跻身于Top-K行列，引入一些随机性。
+Shrinking Batch
+前文提到过，现代的GPU，使用large batch可以平摊掉参数加载和更新的计算时间开销。对于MoE而言，如果每个样本从nnn个Expert中选择kkk个，那么每一个Expert大约只会接收到kbn\frac{kb}{n}nkb​个样本，也就是说，每一个Expert拿到的batch size实际上很小，文章中提出了以下几种解决方法：
+
+
+引入模型并行与数据并行混合机制，假设有ddd台设备，每台设备拷贝一份相同的模型，且将一个batch size为bbb的数据集均匀划分到不同设备进行训练（每台设备的数据集不相同），Expert总数目为nnn，每个样本被分到kkk个Expert，这样平均每个Expert被分到的样本数为k⋅b⋅dn\frac{k\cdot b\cdot d}{n}nk⋅b⋅d​，比单台设备时多了ddd倍（相当于对于每一个样本而言，还是那个模型，还是那么些个Expert，只不过有还有多个设备在同步跑其他几个样本，整体速度加快了，意味着单位时间每一个Expert平均的吞吐量也提高了）；
+
+
+分层MoE：每个设备都有一份“主Gating Network”和一份自己独有的“次级MoE”，每个设备都有完整的大小为bbb的数据集，那么这么看的话，整体的total batch size其实为b×db \times db×d，是随着设备数的增大而增大，因此每一个Expert单位时间吞吐的样本数不变，还是kbn\frac{kb}{n}nkb​，但是可以增加Expert的数量，提高模型性能；
+
+
+在语言模型中，如果有一个句子序列，对每一个时间步的token都进行MoE的话，利用率很低，我们可以利用CNN的权重共享性质，直接一次性将所有token输入MoE中，也就是相当于原本为batch size=1调用n次，现在是batch size为n调用1次；
+
+
+部分研究人员把MoE嵌入到循环结构里面，这样每个时间步的MoE输入不止依赖于当前输入，也依赖于上一步MoE的输出，这样可以在每个时间步选择不同的Expert且考虑历史信息，但是这样必须依赖上个时间步的信息，不能像第三种方法一样一次性处理所有数据了。在这个方法上，我们想要提高batch size，会受到类RNN结构的限制，BPTT（Backprop Through Time）在大batch size、长时间序列的展开上可能会出现存储激活值多，内存爆炸现象。Gruslys等人则提出了一个方案，不存储每个时间步的激活，只存储关键时间步的激活，在反向传播时，如果需要某个未存储的激活，就重新前向计算得到它，从而用一些重复的计算来节省显存。
+
+
+
+
+
+分布式计算
+在分布式计算中，Expert本身是“固定的”，只是其输入和输出需要再多设备之间通信，这会导致一个问题：如果每个Expert的计算量很小，但是输入输出很大，也就是说单个GPU的计算很快，大部分时间都在等待卡间数据传输，造成效率低下。如果要保持计算效率，则每个Expert的计算量/其输入输出数据的大小要大于计算设备的计算能力/网络带宽，这样每一个设备都是满负荷充分利用。在文中使用的MoE中，每一个Expert都只有一层hidden layer，那么我们可以单纯地增大hidden layer或者添加多层hidden layer。
+
+
+
+Expert的重要性偏好
+作者观察到，门控网络很容易收敛到一种状态：给少数几个Expert分配很大的权重。这是模型整体学习得到的自我强化，因为被频繁选中的Expert被训练得越来越强，导致门控网络进一步依赖这些Expert，进入一个恶性循环。Eigen等人使用硬约束硬约束硬约束方法，强行在训练初期使用每一个Expert；Bengio等人则使用软约束软约束软约束，在损失函数中添加正则化，鼓励门控网络输出更均衡的门控值。
+在本文中，作者也使用了一种软约束的方法。首先需要设置一个定义：一个Expert的重要性重要性重要性，等于这个Expert在一个batch中所有门控值的总和：Importance(Ei)=∑batchG(x)iImportance(E_i)=\sum_{batch}G(x)_iImportance(Ei​)=∑batch​G(x)i​，最后添加一个关于Expert重要性的损失项：Limportance=wimportance⋅CV(Importance(E1),...,Importance(Ei))2L_{importance}=w_{importance} \cdot CV(Importance(E_1), ..., Importance(E_i))^2Limportance​=wimportance​⋅CV(Importance(E1​),...,Importance(Ei​))2，其中CVCVCV为变异系数，其值为标准差/平均值，CVCVCV越大则Expert之间差异越大。最小化这个损失项则可以迫使模型中不同Expert的重要性趋于一致。
+
+
+
+一些实验
+作者也开展了相关实验，使用的baseline为Google在16年提出的GNMT，作者减少了原始模型的LSTM层数，同时在encoder之间插入了一些MoE层。
+实验一
+在“1 BILLION WORD LANGUAGE MODELING BENCHMARK”上进行对比实验，MoE架构通过引入E多个Expert，提高了模型规模，且在perplexity上远低于baseline。而在相同计算量下，MoE的perplexity也远低于baseline
+
+    
+
+
+实验二
+在 1B 数据集上，当MoE参数超过大约1B后，提升速率开始变小。而在 100B 数据集上时，perplexity的优化在模型参数量68B之前还在显著改善，但是在137B时却反而恶化了，这可能是过度的稀疏导致的。不管怎么样，下图中两条曲线逐渐增大的差距验证了一个观点：在更大的数据集上，更大的模型规模能够更好地进行学习（无处不在的Scaling Law）
+
+    
+
+
+
+
+参考资料
+
+《OUTRAGEOUSLY LARGE NEURAL NETWORKS:THE SPARSELY-GATED MIXTURE-OF-EXPERTS LAYER》
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Qwen2技术报告阅读笔记</title>
+    <url>/2025/12/02/qwen2/</url>
+    <content><![CDATA[Abstract
+继Qwen后，阿里又推出了Qwen2，同样是基于Transformer架构 + Next-token Prediction自回归训练范式。Qwen2提供了Base和Instruct两个版本，总共发布了5个版本的模型，包括四个dense model（0.5B、1.5B、7B和72B）和一个57B的MoE模型（每个token的计算只激活14B的参数）。
+Qwen2使用超过7万亿tokens的训练数据，其中包含了更高质量的代码和数学推理数据，采用SFT + DPO进行post-training，在多个benchmark上取得了优异的性能表现。
+
+
+
+Tokenizer &amp; Model
+Tokenizer
+Qwen2沿用了Qwen1的tokenizer方案，基于开源快速分词库tiktoken进行分词，其底层为BBPE。该方案具有很高的tokenization效率，且相较于其他方案而言具有更高的压缩率，除了上述优势以外，采用这种方案也能够使得Qwen2的多语言能力得到大幅提升。
+Qwen2所有尺寸的模型都使用相同的词表，包括151643个normal token以及3个special token（也称为control token），参照Qwen1的技术报告，这里的special token是因为使用了OpenAI的ChatML数据格式，分别是&lt;|endoftext|&gt;, &lt;|im_start|&gt;, &lt;|im_end|&gt;。
+需要注意的是，文中提到为了考虑到分布式训练的需求，实际用于embedding的词表大小会更大一些。
+
+Model Architecture
+Qwen2是经典的基于Transformer架构且带有Causal Mask的LLM，上述提到了，Qwen2包含了四个dense model和一个57B的MoE模型，下面进行简要介绍：
+Dense Model
+Qwen2的dense model由多个Transformer层组成，每一层都包括Causal Attention和FFN，相比于Qwen1而言，大部分架构保留了下来，主要具有以下几处变动：
+
+
+GQA：Qwen2 dense model采用Grouped Query Attention（GQA）替代传统的MHA，通过这种方法优化了推理中的 KV cache，使吞吐量显著提升；
+
+
+DCA + YARN：为了扩展上下文的长度，Qwen2使用了Dual Chunk Attention（DCA）+ Yet another RoPE extensioN method（YaRN）的组合trick。前者通过对长序列token进行chunk划分，多层次注意力捕获依赖关系，高效处理长文本；后者则重新缩放了注意力权重，解决 RoPE 在长上下文下“高频旋转失真”问题，两者组合后，使模型在极长上下文下仍保持稳定、可控、推理能力不掉点。
+
+
+其他则沿用Qwen1的配置，例如SwiGLU、带有QKV bias的Attention计算、RMSNorm + Pre-norm。
+
+Mixture-Of-Experts Model
+Qwen2 MoE 模型的架构与 Qwen1.5-MoE-A2.7B中的高度一致。在MoE模型中，MoE FFN 取代了原始 FFN，由 n 个独立 FFN 组成，每个 FFN 为一个Expert。每个 token 会根据 gated network G 给出的概率被路由到特定Expert EiE_iEi​：
+p=softmax(G(x))\mathbf{p} = softmax(G(\mathbf{x}))
+p=softmax(G(x))
+y=∑i∈topk(p)piEi(x)\mathbf{y} = \sum_{i \in top_k(\mathbf{p})} \mathbf{p}_i E_i(\mathbf{x})
+y=i∈topk​(p)∑​pi​Ei​(x)
+下面介绍在Qwen2中关于MoE的关键设计。
+Expert Granularity
+MoE模型与Dense模型最大的区别就是MoE层包含多个FFN，每个对应一个Expert，那么可以联想到，从Dense模型迁移到MoE模型最简单直接的方式便是“使每个Expert FFN的参数 = 原有Dense模型中单个FFN的参数”。比如从Mistral-7B到Mixtral 8×7B，而后同时激活 8 个Expert中的 2 个。
+但是在Qwen2中则采用一种fine-grained experts（细粒度专家）的方案，详细可见《DeepSeekMoE: Towards ultimate expert specialization in mixture-of-experts language models.》。大致来说，在基础的MoE架构基础上，将每个Expert的中间维度减少至其原始维度的1m\frac{1}{m}m1​，并将每个Expert细分为m个更细粒度的Tiny Expert，最后增加同时激活Expert的数量至原来的m倍，在保持一致的专家参数数量和计算成本的同时，通过更细粒度地分割专家，使得激活的专家组合更加灵活和适应。
+Expert Routing
+路由机制的设计对MoE的性能影响巨大，有很多研究者已经在 MoE 中同时使用 shared experts（共享专家）和 routing-specific experts（路由专用专家），前者所有token都可以使用且不依赖路由选择，后者则是只有当路由选择它们时才会激活，例如下图中关于DeepSeekMoE对这两者的混合使用。
+
+	
+
+在Qwen2中也采用了这种方案，shared experts在各种任务中进行共享，而routing-specific experts则用于特定任务场景的选择，使 MoE 路由机制更加灵活与高效。
+Expert Initialization
+Qwen2 MoE中的初始化类似于一种“upcycling”的方法，以dense模型权重为基础，若有n个Expert则复制n份来初始化Expert。但是由于Qwen2采用了fine-grained experts，每一个Expert FFN的中间维度会比原来dense模型中FFN的中间维度要更小，在Qwen2中是这样做的：
+
+假设Expert中间层大小为hEh_EhE​，Expert数量为nnn，原始dense模型FFN的中间维度为hFFNh_{FFN}hFFN​；
+将原始FFN复制$$\lceil \frac{n \times h_E}{h_{FFN}} \rceil$$次，以保证适配指定Expert数量与大小，使得总维度能够覆盖所有的Expert的需求；
+这些复制体都是相同的，如果按照原有的FFN内在统计规律顺序切片分配给每个Expert，会存在许多Expert出现几乎一致或者完全一致的情况，为了给每个Expert引入多样性的表达能力，Qwen2在中间层维度上对参数进行shuffle，使得每个Expert组合了不同来源的参数，具有独特的参数；
+最后，为了引入一些随机性，每个Expert 50%的参数将被随机初始化而不是依靠原始的FFN
+
+
+Model Configuration
+
+	
+
+相比于 Qwen1.5，Qwen2显著减少了 KV Heads 大小，内存占用减小，使得长上下文推理，低显存推理，多轮 reasoning 更加高效。
+
+
+
+Pre-training
+在Qwen2的预训练中，主要关注了优化改善数据集与探索有效处理长上下文的方法两个方面。
+Pre-training Data
+Qwen2的预训练基于一个全新的大规模高质量数据集，相比于Qwen1和Qwen1.5所使用的预训练数据集有了显著地提升。主要体现在以下三个方面：
+数据质量提升
+Qwen2的数据同样来自各类渠道，原始数据中不可避免存在低质量文本、重复内容和噪声信息等冗余信息，需要对数据进行过滤。
+Qwen2结合了启发式过滤与模型过滤两种过滤方案。前者是基于经验规则、统计或简单算法的过滤手段（删除长度过短或过长的文本/删除重复行或文档/删除包含过多特殊符号或乱码的文本/删除不符合语言规范或语法的句子等），这种方案快速、简单、可控，
+可保证初步的基础质量。后者则利用 Qwen 模型打分筛掉低质量数据，此时的评分维度会更加丰富（语义完整性/文本可读性/与主题相关性/代码是否可运行/数学公式是否合理等），并得到高质量预训练数据。
+数据内容扩展
+Qwen2的预训练数据增加了代码、数学和多语言文本，提升了推理和跨语言能力：
+
+
+收集了大量高质量的代码、数学、以及多语言文本；
+
+
+支持约 30 种语言，包括英语、中文、西班牙语、法语、德语、阿拉伯语、俄语、韩语、日语、泰语和越南语。
+
+
+数据分布优化
+为了确定数据配比，选择一种更符合人类实际接触和使用语言的方式，Qwen2团队选择先在一些小模型上快速反复试验不同的数据比例配方，找出最优的数据混合策略，最终将这个比例用于训练大模型。
+
+在上述三种方案的改善优化下，Qwen2 将预训练数据规模从 Qwen1.5 的 3T 扩大到 7T tokens。Qwen2团队尝试进一步放宽质量标准构建 12T tokens 的更大数据集，但模型效果并未优于 7T，除了小模型自身能力的影响外，这也能说明预训练数据集的质量影响之大。因此为了在性能与成本间平衡，最终选择使用高质量的 7T 数据集，最终得到的预训练数据方案如下：
+
+
+除了0.5B之外的 Qwen2 dense模型均使用 7T tokens 训练；
+
+
+Qwen2-0.5B 使用 12T tokens 数据训练，因为0.5B模型规模小、训练成本低；
+
+
+Qwen2-MoE在继承dense模型参数的基础上，额外增加 4.5T tokens 的训练数据，为 MoE部分提供更多学习信号；
+
+
+在预训练中加入高质量多任务指令数据，用于增强模型的 In-Context Learning 与 Instruct Follow 能力。
+
+
+
+
+long-content training
+在长文本推理能力的提升方面，除了之前提到过的DCA + YaRN的方案，Qwen2还将RoPE的基础频率从 10000 调整到 1000000。同时，在预训练时将上下文长度从 4096 tokens 增加到 32768 tokens，引入大量高质量长文本数据。
+
+
+
+Post-training
+Qwen2的post-training与传统依赖大量人工监督的方式不同，聚焦于如何高效获取用于SFT与RLHF的高质量示范与偏好数据，在大幅降低人工标注需求的同时，保障数据的优质与可靠。
+Post-training Data
+对于SFT而言，所使用的数据为给定的“指令-回答”对{(xi,yi)}\{ (x_i, y_i) \}{(xi​,yi​)}；而对于RLHF而言，所使用的数据为“指令-更偏好的回答-较低偏好的回答”对{(xi,yi+,yi−)}\{ (x_i, y_i^+, y_i^-) \}{(xi​,yi+​,yi−​)}。后训练数据构建遵循一个“two-step”方案，由 collaborative data annotation 和
+automated data synthesis组成。
+collaborative data annotation（协作式数据标注）
+分为自动本体提取（Automatic Ontology Extraction）、指令选择（Instruction Selection）、指令演化（Instruction Evolution）和人工标注（Human Annotation）四个环节：
+
+Automatic Ontology Extraction（这里指的是描述指令类型与任务结构的体系）：这里使用了InsTag，这种方法能够给指令标注细粒度标签，把“杂乱的指令”系统化为有层级、有细粒度的任务类别（写作/代码/数学/翻译/对话/扮演等），再根据标签构建指令的层级结构（hierarchical ontology）；
+Instruction Selection：得到InsTag标注后的指令集后，根据文章《How abilities in large language models are affected by supervised fine-tuning data composition》中的思路，根据标签多样性、语义丰富性、复杂度和意图完整性等角度进行指令选取，最终选取了选取一组具有代表性的指令。
+Instruction Evolution：再选定代表指令集后，基于Qwen模型进行指令集的self-evolution，例如：增加边界条件、增加限制以及增加逻辑要求，对指令集进行复杂化并且保证了指令集各类难度的多样性；
+Human Annotation：这一步针对给定指令的回答进行选择，具体我们给定一条指令，选择不同版本\规模\生成策略的Qwen模型生成多条回答，人工根据人类偏好对这些回答进行排序，确保最优的回答符合标准之后，分别得到SFT和RLHF所需要格式的数据。
+
+automated data synthesis（自动化数据合成）
+大规模数据的合成通常成本十分高昂，对于需要专业知识、经验、严谨性或耐心的任务更是具有巨大的挑战，Qwen2团队提出了一套自动化数据合成的方法以应对上述问题：
+
+拒绝采样（Rejection Sampling）：针对数学问题等具有确定性答案的指令任务，采用拒绝采样的思路，要求LLM为这个指令生成多条推理路径，保留得出准确结果且模型判定为合理的路径作为SFT的数据对，并通过对比正确与错误路径为RLHF生成偏好数据；
+执行反馈（Execution Feedback）：针对 code 与 constraint-following 等指令任务，通过一个Execution Feedback来判断生成回答的质量。例如code任务中，我们可以执行生成的代码，而后检查执行结果是否符合要求；而对于constraint-following类型的任务也可以参照这种思路。比如请生成不超过20字的文本的指令可以直接判断生成文本的size，或者以JSON格式列出数据则可以使用类似json.loads()这种方法进行验证…
+数据再利用（Data Repurposing）：针对角色扮演与文学写作等指令任务，充分利用互联网已有数据进行数据合成。对于文学写作任务，收集已发表的高质量作品，使用LLM自动生成指令，将原作品作为标准回答后构建数据对。而对于角色扮演类的任务，用Wikipedia抽取真实的（这里的真实是指在互联网真实存在的）人物信息，让 LLM 生成角色扮演的指令+回复；
+合法性反馈（Constitutional Feedback）：根据现代社会的法律与道德约束构建一个“原则集”（比如安全、价值、中立性），让模型根据原则写出符合或违反原则的回答，作为SFT和RLHF的数据来源。
+
+
+
+SFT &amp; RLHF
+在SFT阶段，Qwen2使用了超过 50 万条高质量指令数据，涵盖指令跟随、代码、数学、推理、多语种和安全等多种能力，以 32k 的序列长度训练 2 个 epoch，学习率从 7e-6 逐步降到 7e-7，并采用 0.1 的weight decay 和 gradient clip（max=1.0）来防止过拟合并稳定训练。
+在RLHF阶段，Qwen2的训练分为offline和online两个阶段，offline阶段基于预构建好的偏好数据集，通过DPO最大化yi+y_i^+yi+​和yi−y_i^-yi−​之间的差异；online阶段，模型实时进行响应，生成多条回答，由Reward Model选取最好和最差的回答构建为新的yi+y_i^+yi+​和yi−y_i^-yi−​，而后再通过DPO进行训练。在训练中OMO（Online Merging Optimizer） 减少 “alignment tax”，保证模型符合人类偏好的同时不丢失性能。
+
+
+
+Evaluation
+实验部分可以自行查看原文，这里不进行记录。
+
+
+
+参考资料
+
+《QWEN2 TECHNICAL REPORT》
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Qwen2.5技术报告阅读笔记</title>
+    <url>/2025/12/05/qwen2_5/</url>
+    <content><![CDATA[Introduction
+
+	
+
+在 AGI 与 开源 LLM 快速发展的时代，Qwen Team推出了Qwen的2.5版本，具备Better in Size、Better in Data和Better in Use三个特性。旗舰模型 Qwen2.5-72B-Instruct 的性能可与最先进的开放权重模型 Llama-3-405B-Instruct 相匹敌，而发布的专有的MoE模型——Qwen2.5-Turbo 和 Qwen2.5-Plus，也分别具备与 GPT-4o-mini 和 GPT-4o 竞争的性能。
+
+
+
+Architecture
+Qwen2.5与Qwen2类似，可分为dense model和MoE model，其中dense model包含Qwen2.5-0.5B / 1.5B / 3B / 7B / 14B / 32B / 72B，用于社区开源；MoE模型包含Qwen2.5-Turbo和Qwen2.5-Plus，主要用于API服务。
+Dense Model
+qwen2.5 dense model沿用了与Qwen2 dense model一致的模型架构：
+
+使用transformer decoder结构；
+带有QKV bias的GQA；
+SwiGLU激活函数；
+RoPE进行位置编码
+RMSNorm + Pre-norm进行Normalization
+
+dense model开源系列模型参数如下：
+
+	
+
+
+MoE Model
+在dense model的基础上，通过将原始的FFN替换为MoE 层，将其扩展为MoE model。
+每个 MoE 层由多个 FFN Expert和一个路由机制组成，该路由机制将 token 分派给 Top-k 个最相关的Expert（top-K routing）。参照Qwen2 MoE的做法，Qwen2.5 MoE也使用了shared experts（共享专家）和 routing-specific experts（路由专用专家）的混合机制，shared experts在各种任务中进行共享，routing-specific experts用于特定任务场景的选择。
+
+
+
+Tokenizer
+Qwen2.5沿用了Qwen的tokenizer，基于开源快速分词库tiktoken进行分词，其底层为BBPE。
+为了提升一致性并减少潜在兼容性问题，所有的Qwen2.5使用同一个词表。与Qwen2一致，Qwen2.5词表也包含151643个normal token，但是special token数量从原来的3个增加至22个，其中新增2个用于工具功能，其余用于其他模型能力。
+
+
+
+Pre-training
+Pre-training Data
+Qwen2.5的预训练数据相较于Qwen2的有显著的优化提升，主要体现在以下几点：
+更好的数据过滤
+使用 Qwen2-Instruct 作为“数据过滤器”，由于 Qwen2-Instruct 在更大的多语言语料库上训练过，具备更细致的质量判断能力，因此，它可以更好地保留高质量数据，并过滤掉多语言中低质量数据。相比 Qwen2，Qwen2.5所使用的数据过滤器功能更为强大。
+更好的math和code相关数据
+在 Qwen2.5 的预训练中，加入了来自 Qwen2.5-Math 和 Qwen2.5-Coder 的训练数据，使得Qwen2.5在数学和编程任务上达到SOTA水平。
+更好的合成数据
+为了生成高质量的数学、代码和知识类合成数据，分别使用Qwen2-72B-Instruct和Qwen2-Math-72B-Instruct生成相应的数据，将生成的数据再经过通用 reward model和 Qwen2-Math-RM-72B进行进一步评判过滤，保证合成数据的质量。
+更好的数据混合
+Qwen Team使用Qwen2-Instruct 分类数据，发现各个领域的数据存在不平衡现象：
+
+电商、社交媒体、娱乐类内容占比过高，这些领域包含大量重复、模板化、低质量甚至机器生成内容；
+科技、科学、学术研究等高价值领域反而稀少。
+
+于是，Qwen2.5在预训练数据中对这些占比过高的领域进行下采样，对高价值的领域进行上采样，最终形成更加平衡且价值更高的预训练集。
+最终形成了比Qwen2更大、质量更优的预训练数据集，从Qwen2的7T tokens扩展至18T tokens。
+
+超参数的 Scaling Law
+Kaplan等人提出的Scaling Law最主要的一个作用便是预测模型性能，指导算力资源配置。而Qwen Team基于Qwen2.5的预训练数据开发了一种关于超参数的Scaling Law，并将其用于寻找不同规模下的dense model和MoE model的最优训练超参数，例如batch size、学习率μ\muμ等。
+于是，Qwen Team系统性地研究了如下两个超参数：最优学习率μopt\mu_{opt}μopt​和最优batch sizeBoptB_{opt}Bopt​，看它们是如何随着模型规模NNN和数据规模DDD变化的。
+相关实验设置：
+
+44M ~ 14B规模参数的 dense 模型；
+44M ~ 1B 规模激活参数的 MoE 模型；
+数据规模从 0.8B 到 600B tokens。
+
+基于实验得到的这些最优超参，对最终的 loss 随模型规模与训练数据规模的变化规律进行建模，得到超参数的Scaling Law，并利用Scaling Law：
+
+预测不同 MoE 模型与 dense 模型的性能对应关系；
+帮助确定 MoE 的激活参数量和总参数量。
+
+从而确保例如 Qwen2.5-72B 和 Qwen2.5-14B 的 dense 版本与其对应 MoE 版本性能相当。
+
+Long-context Pre-training
+为了训练效率最优，Qwen2.5采用两阶段方法进行训练：
+
+初始阶段，使用4096的上下文长度；
+后续扩展阶段，使用更长的上下文长度。
+
+根据上述规则，规定除了Qwen2.5-Turbo 外的所有Qwen2.5模型的训练上下文长度由4096 tokens变为32768 tokens，将同时将 RoPE 基频使用 ABF 技术从10000使用1000000。这里稍微解释一下RoPE的ABF：
+基于ABF的RoPE变频
+RoPE的角速度计算公式为ω(d)=θ−2dDω(d)=\theta^{-\frac{2d}{D}}ω(d)=θ−D2d​，其中θ\thetaθ为基频，ddd代表总维度为DDD的向量的第ddd个维度。
+RoPE的www越大，旋转地越快，周期重叠速度越快，可区分\理解的上下文长度就越短，反之亦然。逐渐增大RoPE的基频会使得其旋转速度变慢，对长上下文的理解能力也更强。
+因此，我们需要进行ABF，即自适应基频，在扩展阶段的训练过程中，基频 θ\thetaθ 不再是一个常数，而是一个随着训练步数（或者上下文长度）逐渐增大的变量。
+
+回到正文，对于Qwen2.5-Turbo而言，采取了与其他模型不同的预训练策略，上下文长度扩展分为四个阶段：32768 tokens-&gt;65536 tokens-&gt;131072 tokens-&gt;262144 tokens，RoPE基频高达10000000，每个阶段训练数据包含40%当前最大长度上下文数据和60%较短长度上下文数据，平滑过渡，提升模型对不同上下文长度的泛化能力。
+此外，类似Qwen2，也使用了YaRN、DCA等策略继续稳定模型长上下文的表现。
+综合这些技术后，不仅降低了长上下文的perplexity，还不影响短上下文的性能。Qwen2.5在长上下文的表现得到了有效优化，Qwen2.5-Turbo 支持 100w tokens，其他模型支持 131072 tokens。
+
+
+
+Post-training
+Qwen2.5的post-training相比于Qwen2主要有两点提升：
+
+SFT的数据覆盖更大；
+双阶段RL（offline + online）。
+
+SFT
+Qwen2.5在SFT环节做的增强点还是很充足的，分为以下九点：
+高质量长序列生成
+为了构建长文本数据集，Qwen2.5通过回译增强技术生成长文本的queries，并对生成文本的长度进行约束，生成**{query, long-text data}**数据对，并通过Qwen2过滤掉低质量的数据对。
+Math
+加入来自 Qwen2.5-Math 的CoT数据，数据来自公开数据、K12 数学、合成题。为了确保高质量的数学推理，使用基于奖励模型的拒绝采样筛选高质量数据，并提供的正确推理步骤作为参考，指导模型学习“正确的思考方式”。
+Code
+为了提升模型代码相关能力，整合了Qwen2.5-Coder 的指令微调数据，利用多编程语言的 agent 协作生成 40 种不同编程语言相关的高质量对话。此外，从包含代码相关的Q&amp;A网站和带有算法/代码片段的GitHub仓库收集数据，增加了数据的多样性。
+使用多语言的沙箱执行环境进行静态检查和自动单元测试，以确保代码正确性和质量。
+指令跟随
+为了确保SFT包含高质量的指令跟随数据，Qwen2.5使用一种严格的“代码式验证框架”进行指令跟随数据生成。具体步骤如下：
+
+数据生成所用的LLM需要生成三样东西：1、生成指令，2、生成验证程序代码，3、生成若干单元测试用例用于交叉验证；
+而后给Qwen2.5指令，得到其生成的代码后，执行验证程序和完整的单元测试；
+如果测试通过，保留为SFT数据，反之丢弃。
+
+这种基于执行反馈的拒绝采样能够严格筛选 SFT 数据，从而保证模型能够忠实遵循意图指令。
+结构化数据理解
+对于结构化或者半结构化的数据理解在大模型的企业应用中非常重要，Qwen Team开发了一个包含许多这类数据理解任务（数据表分析、表格问答、JSON 编辑、半结构化网页信息读取）的数据集，并通过引入CoT，更大幅度地在SFT这个环节强化了模型对于这类数据的深入理解。
+逻辑推理
+为增强模型逻辑推理能力，构建了包含7w条跨领域查询的多样化数据集（涵盖选择题、判断题、开放式问题），模型使用多种方法对这些问题进行推理（演绎/归纳/类比/因果/统计推理），推理后将迭代地进行数据筛选，剔除错误答案与缺陷推理，显著提升了模型在复杂推理任务中的准确性与鲁棒性。
+跨语言迁移
+高资源语言指如英文、中文这类能够收集到大量数据的语言，低资源则反之。为了促进模型的通用能力在不同语言之间迁移，使用一个翻译模型，将高资源语言的指令翻译成多种低资源语言，并由此生成对应的回答。
+System Prompt 鲁棒性
+当用户拿到一个模型进行使用时，总会自己自定义各类的System Prompt，如果模型对于System Prompt过于敏感导致性能方差极大，会十分影响用户的体验。
+Qwen Team构建了数百个通用的System Prompt模板，增加后训练中System Prompt的多样性，并且确保System Prompt与对话内容的语义上的一致性。
+后续评估表明模型在不同的System Prompt下仍能保持优异的表现和较小的方差，增强了模型的鲁棒性。
+回答过滤
+使用多种自动化注释方法进行模型回答评估，包括专门的评论模型和多智能体协作评分系统。所有回答都经过这些系统的严格筛选，只有被所有评分系统认为完美的回答才会被保留，从而保证了模型输出的高质量标准。
+
+最终，Qwen2.5的SFT数据集包含了超过100w条高质量数据，基于32K tokens的上下文长度进行两轮SFT，学习率由7×10−67 \times 10^{-6}7×10−6变为7×10−77 \times 10^{-7}7×10−7，使用0.1的weight decay，梯度范数被限制在最大值为1.0的范围内。
+
+Offline RL
+在SFT阶段，广泛使用了执行反馈和答案匹配两种思想确保模型回答的质量，在offline rl中继续复用这个步骤，将通过质量筛选的数据设为正样本，反之设为负样本，而后构建数据对直接进行DPO训练。
+为了进一步提高数据的可靠性和安全性，采用了人工与模型自动化相结合的审查流程，这种双重审查方法确保训练数据既可学习，又更符合人类的预期。
+最后得到了150000 对训练样本，使用 OMO 进行 1 个 epoch 的训练，学习率为 7×10−77 \times 10^{-7}7×10−7。
+
+Online RL
+online rl中奖励模型十分重要，为了构建一个稳健的奖励模型，Qwen2.5的online rl遵循一套精心定义的标注标准，这些标准确保模型生成的回答不仅质量高，而且符合伦理道德约束与用户中心原则。分别包括以下几点：
+
+
+真实性（Truthfulness）：回答必须基于事实，坚定地回答给定的上下文和指令，不得生成虚假或缺乏依据的信息；
+
+
+有用性（Helpfulness）：回答应真正解决用户问题，内容积极、有吸引力、具有教育意义并与主题相关，同时严格遵循指令；
+
+
+简洁性（Conciseness）：回答应简明扼要，避免不必要的冗长；
+
+
+相关性（Relevance）：回答的所有部分都必须与用户查询、对话历史和助手上下文直接相关；
+
+
+无害性（Harmlessness）：必须避免可能导致非法、不道德或有害行为的内容，始终遵循负责任的沟通方式；
+
+
+去偏（Debiasing）：回答应避免偏见，包括但不限于性别、种族、国籍和政治方面，遵循广泛认可的伦理道德标准。
+
+
+用来训练奖励模型的queries来自两个数据集，一个是公开可得的开源数据，另一个为更复杂的私有数据集。 相关的回答由 Qwen 在不同训练阶段通过不同方法（SFT、DPO、RL）微调后的模型checkpoint生成。为了增加回答的多样性，这些回答在不同的temperature下得到。 而后，偏好数据对通过人工和自动标注流程生成，同时 DPO 的训练数据也被整合进该数据集中。
+在online rl中使用 GRPO 进行训练，其中用于训练奖励模型的queries集合与 GRPO 训练阶段使用的queries集合完全一致。训练过程中query的处理顺序根据其所有回答的分数（由奖励模型评估）的方差决定，方差越大的query被优先处理，以提高训练效果。 为每个query采样8个回答，一个episode采样2048个sample，一个更新的global batch size为2048，将每对query和回答视为一个样本。
+
+LongContext Fine-tuning
+为了进一步扩展 Qwen2.5-Turbo 的上下文长度，在其后训练阶段引入了更长上下文的 SFT 示例数据，使Trubo模型能够在处理长上下文查询时更好地符合人类偏好，这里采用两阶段的SFT方案：
+
+
+模型仅使用短指令进行微调，每条指令最多包含 32768 个 token。这一阶段使用的数据和训练步骤与其他 Qwen2.5 模型相同，以保证在短任务上的强性能；
+
+
+微调过程结合短指令（最多 32768 token）和长指令（最多 262144 token）。这种混合方式有效提升了模型在长上下文任务中的指令跟随能力，同时保持了短任务的性能。
+
+
+在 RL 阶段，采用与其他 Qwen2.5 模型类似的训练策略，仅关注短指令。这一方案的选择主要有两个原因：
+
+
+对长上下文任务进行 RL 训练计算成本十分高昂；
+
+
+当前缺少能够为长上下文任务提供合适奖励信号的奖励模型。
+
+
+此外，Qwen Team发现，**仅对短指令进行 RL 训练，也可以显著提升模型在长上下文任务中对人类偏好的对齐能力。**个人分析，原因可能有如下：
+
+rl强化了模型的instruct-follow能力，这对长短上下文都起作用；
+rl使模型学习到了“偏好”这种抽象的模式，使其能够关注有用的信息，使得模型的思考方式更为贴近人类了；
+…
+
+
+
+
+Evaluation
+具体的评估实验可参照原文自行查看，此处不展开说明。
+回看Qwen2.5的成功，还是感叹一句其数据构建方面的严谨与全面，果然究其根本数据才是LLM良好性能的基石…
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Post-norm &amp; Pre-norm</title>
+    <url>/2025/08/04/prepostnorm/</url>
+    <content><![CDATA[Post-norm
+在传统的transformer中，layer normalization一般发生在残差之后，即在add之后再进行norm，如果令F为MHAorFFN，那么post-norm则有：Xo=LN(Xi+F(Xi))X_o = LN(X_i + F(X_i))Xo​=LN(Xi​+F(Xi​))。
+post-norm可以使得每个神经网络层的输出都在相似的尺度上，保持了每个模块的一致性，稳定了前向传播的方差。在残差之后进行归一化，保证了模块的输入输出的分布相似性，从而在前向传播中避免特征能量发散。
+
+	
+
+但是Post-norm也存在以下问题：
+问题1
+假设x的方差是1，F(x)的方差是σ\sigmaσ，Norm 操作就相当于除以sqrt(1+σ2)sqrt(1+\sigma^2)sqrt(1+σ2)。如果σ\sigmaσ比较小，那么残差中这条x的岔路的权重则非常接近于1，这说明其能够作为一条恒久的路存在下去从而发挥残差的作用从而发挥残差的作用，模型在初始阶段就越接近一个恒等函数，越不容易梯度消失。 但是，参数的随机初始化可以认为x与F(x)是两个相互独立的随机向量。假设它们各自的方差是1，则x+F(x)的方差是2，而Norm操作负责将方差重新变为1，那么在初始化阶段，Norm操作就相当于除以了根号2，xxx -&gt; x2\frac{x}{\sqrt{2}}2​x​。这个例子证明，post-norm中会削弱残差分支，且在浅层输入时更为严重，还是不太好训练；
+
+问题2
+当进行梯度传播时，有如下计算公式：
+
+	
+
+也就是说LN会根据输入方差对梯度进行缩放，当输入方差较小（深层残差信号被削弱时），梯度会被放大，且越靠近输出层，残差信号经过多层叠加和削弱，梯度被显著放大；而对于输入层，bp时经过多层连乘和残差结构的失效后会削弱梯度，造成浅层可能出现梯度消失情况。这表明了post-norm对参数非常敏感，在没有任何调整的情况下使用较大的学习率训练的效果会非常差。
+此时我们需要进行warm up操作，缓慢提高学习率，这样高层不会因梯度大+学习率大而剧烈震荡，而低层接收到的反向梯度方向更加平滑、稳定，可以安全积累小幅更新。
+PS
+Adam通过计算梯度的一阶矩（均值）和二阶矩（方差），实现自适应学习率调整。不像传统SGD的参数更新严格与梯度大小成正比，梯度太小则更新量几乎为零，导致训练停滞。只要梯度幅度大于噪声水平，Adam 都能保证参数获得一定量级的更新，避免梯度过小导致的停滞。因此post-norm还是有机会得到有效训练，但是对层数高的post-norm而言，确实非常难训练。不过，对于finetune而言，需要的是优先调整靠近输出层的参数，快速适应新任务；保持靠近输入层的参数稳定，避免破坏预训练的底层特征，这么看来post-norm似乎相当适合进行微调。
+
+
+
+Pre-norm
+
+	
+
+pre-norm在进行非线性操作F前对输入进行LN，即“将要被使用时才进行归一化”。
+在进行函数计算前进行LN，能够使得模型更有效地控制输入特征的尺度，且保留原始输入的直接传递通道，降低深层网络的优化难度。
+
+
+
+Post-norm v.s. Pre-norm
+在苏神的文章中，讨论了这一问题：“Post Norm的结构迁移性能更加好，也就是说在Pretraining中，Pre Norm和Post Norm都能做到大致相同的结果，但是Post Norm的Finetune效果明显更好”。
+但这是为什么呢？知乎@唐翔昊给出了分析：，一个L层的Pre Norm模型，其实际等效层数不如L层的Post Norm模型。对于Pre-norm，我们可以推导得到：
+
+	
+
+输入经过LN后量级大致相同，且Attention、MLP这两个函数操作通常不会大幅改变输入数值的整体量级（幅值、方差），输出和输入的量级大致相同。经过上述两点分析，也就是说第t+1层跟第t层的差别当t较大时，两者的相对差别是很小的。因此可得到如下结论：
+
+	
+
+上述公式可知，经过近似后，输入xt连续经过t和t+1层，等价于xt经过一个更宽一些的t层。所以在Pre Norm中多层叠加的结果更多是增加宽度而不是深度，层数越多，这个层数就越“虚假”，模型退化为浅且宽的模型。而对于模型而言，深度的增加等价于函数复合次数增加，深度的增加能以指数级提升函数表示能力，而宽度的增加只能线性提升容量，所以模型的能力也随之变弱。
+而在上述的分析中，post-norm每Norm一次就削弱一次恒等分支x的权重，所以它反而是更突出残差分支F(x)的，因此Post Norm中的层数更加真实，一旦训练好之后效果更优。
+
+
+
+参考资料
+
+https://zhuanlan.zhihu.com/p/30580480776
+https://spaces.ac.cn/archives/9009
+https://www.zhihu.com/question/519668254/answer/2371885202
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RAG -《Retrieval-Augmented Generation for  Knowledge-Intensive NLP Tasks》论文阅读笔记</title>
+    <url>/2025/09/26/rag/</url>
+    <content><![CDATA[Introduction
+传统的参数化模型如GPT、BERT，这些模型训练完成后，知识就锁死在模型参数中，难以更新。且由于模型的黑箱性质，无法提供预测的依据或来源，并且非常容易产生幻觉，容易编造看似合理但虚假的信息。
+Facebook为了解决上述提到的问题，提出了Retrieval-Augmented Generation (RAG)，引入了非参数化记忆，也可以称为“外部知识库”，构建了一种混合范式。好处为：外部知识库可以随时拓展、可以“检查”模型到底参考了哪些源文档以及模型可以基于事实依据生成，减少幻觉。
+与之前的REALM, ORQA等“抽取式问答”相比，RAG则将检索增强应用到了nlp的seq2seq任务中。
+RAG的Workflow大致可以简述为下：给定一个输入序列xxx，并且检索文本文档zzz，并在生成目标序列yyy时将这些检索出来内容作为附加文本进行使用。 整个架构包含两个关键组件：
+
+一个参数为η\etaη的检索器pη(z∣x)p_{\eta}(z|x)pη​(z∣x)：给定一个query xxx，这个检索器能够返回所有可能文档的概率（实际应用中可能返回Top-K个） ；
+一个参数为θ\thetaθ的生成器pθ(yi∣x,z,y1:i−1)p_{\theta}(y_i|x,z,y_{1:i-1})pθ​(yi​∣x,z,y1:i−1​)：给定初始的输入xxx、前i−1i-1i−1个token以及检索到的内容zzz，以生成一个当前的token。具体如下图所示：
+
+
+	
+
+
+
+
+Models
+文中使用seq2seq的方案对检索器和生成器进行联合训练，并针对RAG的具体模型架构提出了两种方案，分别在sequence层级和token层级上利用检索：
+RAG-Sequence Model
+让检索器先根据初始输入xxx检索得到Top-K个文档检索内容zzz，生成器根据这KKK个不同的文档内容生成KKK个不同的连续序列概率，将这些序列概率求和后得到总目标生成连续序列的概率，表达式如下：
+
+	
+
+
+RAG-Token Model
+对于当前生成过程中的token yiy_iyi​，我们先得到Top-K个不同的文档内容下输出该token的概率，然后求和得到总的该token的概率，最后按照这个过程重复生成token得到最后的生成序列yyy，表达式如下：
+
+	
+
+
+文中还额外提到，如果将RAG用于序列分类的话，则最后都是依赖于某个token，此时两种方案退化为同一层级，使用哪一种效果都相同。
+
+检索器
+使用了DPR，DPR为双编码架构，分为文档编码器和查询编码器：
+d(z)=BERTd(z)d(z)=BERT_d(z)
+d(z)=BERTd​(z)
+q(x)=BERTq(x)q(x)=BERT_q(x)
+q(x)=BERTq​(x)
+pη(z∣x)∝exp(q(x)Td(z))p_{\eta}(z|x) \propto exp(q(x)^Td(z))
+pη​(z∣x)∝exp(q(x)Td(z))
+计算Top-K(pη(⋅∣x))(p_{\eta}(\cdot | x))(pη​(⋅∣x))是一个最大内积搜索问题（Maximum Inner Product Search, MIPS)，参考这篇文章：《Billion-scale similarity search with gpus》，FaceBook团队使用了FAISS（Facebook AI Similarity Search），这会将整个知识库的文档通过DPR的文档编码器转换为向量后，预先构建一个FAISS索引，而后使用优化后的倒排文件索引（IVF）进行近似搜索，实现亚线性时间的检索。
+生成器
+使用BART-large作为生成器，参数量为0.4B，文中将检索结果zzz和原始输入xxx简单进行拼接。
+
+
+
+Training
+对检索器和生成器进行联合微调训练，语料数据格式只给出了输入和输出：(xi,yi)(x_i,y_i)(xi​,yi​)，而中间过程需要检索哪些内容没有进行规定，这将迫使模型进行无监督检索的学习。
+更具体而言，基于Adam优化器和随机梯度下降对负边际对数似然进行优化：∑j−log(yj∣xj)\sum_j -log(y_j|x_j)∑j​−log(yj​∣xj​)。
+文中提到，在训练期间更新文档编码器的参数BERTdBERT_dBERTd​计算开销很大，需要定期更新知识库文档索引，因此不对文档编码器进行更新，只更新查询编码器BERTqBERT_qBERTq​和生成器BARTBARTBART。
+
+
+
+Decoding
+在decode时，对于RAG-Token而言，它是一个标准的自回归seq2seq生成问题，且每一步选出token都需要给定这一步的Top-K个检索结果，根据这种特性，我们可以将其带入到一个标准的Beam Search中（非常自然的过程，每生成一个token都需要保留K个最高的概率结果，标准的Beam Search过程）。
+而对于RAG-Sequence而言，整个过程无法自然地代入一个标准的Beam Search。如果需要彻底解码，则需要进行如下过程：
+
+
+Top-K检索到KKK个文档结果，对于每一个文档结果，都进行一次Beam Search，得到NNN个在Beam Search策略下最有可能的答案序列；
+
+
+将KKK个检索文档结果的所有答案序列进行合并，得到全局候选池YYY，而后则需要计算YYY中每个答案序列yyy的“全局累积概率”p(y∣x)p(y|x)p(y∣x)（注意：这里全局比较时并不是直接拿基于每一个文档生成序列的局部累积概率来比较，局部累积概率只能用于同一个文档下生成的序列的比较）；
+
+
+根据公式：∑z∈TopK(p(⋅∣x))pη(z∣x)⋅pθ(y∣x,z)\sum_{z \in TopK(p(\cdot | x))}p_{\eta}(z|x) \cdot p_{\theta}(y | x, z)∑z∈TopK(p(⋅∣x))​pη​(z∣x)⋅pθ​(y∣x,z)，我们可以计算全局累积概率，这要求对所有Top-K的zzz进行求和，但是这会出现一个问题：如果一个候选答案序列yyy没有出现在某个文档z′z&#x27;z′Beam Search的NNN个答案序列中，也就是我们缺少了这一部分的pθ(y∣x,z′)p_{\theta}(y | x, z&#x27;)pθ​(y∣x,z′)，而为了精确计算全局累积概率，需要将这一部分补上，则需要给定这个文档z′z&#x27;z′、原始输入xxx和已知的答案序列yyy，重新进行一次前向推理，得到pθ(y∣x,z′)p_{\theta}(y | x, z&#x27;)pθ​(y∣x,z′)。
+
+
+这种彻底解码有可能会非常耗时，首先初始就需要进行K⋅NK \cdot NK⋅N次Beam Search，而最坏的情况，全局候选池YYY中每一个yyy都在唯一的文档zzz下生成，那么这时候需要进行额外的(K−1)⋅∣Y∣(K-1) \cdot |Y|(K−1)⋅∣Y∣次额外的前向传播，对于长文本而言，这显然不太现实。
+文中提出的“快速解码”是一种为了实际应用而做出的近似策略，即如果某个yyy没有在z′z&#x27;z′下的生成结果中，则令pθ(y∣x,z′)=0p_{\theta}(y | x, z&#x27;)=0pθ​(y∣x,z′)=0。这个假设的合理性在于：如果连在只看文档z′z&#x27;z′的情况下，yyy都不是前NNN个最可能的答案之一，那么它对于最终全局累积概率的贡献很可能微乎其微，可以忽略不计。
+
+
+
+参考资料
+
+《Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks》
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+        <tag>DL</tag>
+        <tag>ML</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Ubuntu在Anaconda环境中安装包时报错：OSError：[Errno 28] 设备上没有空间</title>
+    <url>/2025/05/29/tips1/</url>
+    <content><![CDATA[今天在本地部署SAM2，conda创建环境后安装torch相关依赖包，但是安装到一半报错如下：
+ERROR: Exception:Traceback (most recent call last):  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_vendor/urllib3/response.py&quot;, line 438, in _error_catcher    yield  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_vendor/urllib3/response.py&quot;, line 561, in read    data = self._fp_read(amt) if not fp_closed else b&quot;&quot;           ^^^^^^^^^^^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_vendor/urllib3/response.py&quot;, line 527, in _fp_read    return self._fp.read(amt) if amt is not None else self._fp.read()           ^^^^^^^^^^^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_vendor/cachecontrol/filewrapper.py&quot;, line 102, in read    self.__buf.write(data)  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/tempfile.py&quot;, line 499, in func_wrapper    return func(*args, **kwargs)           ^^^^^^^^^^^^^^^^^^^^^OSError: [Errno 28] 设备上没有空间During handling of the above exception, another exception occurred:Traceback (most recent call last):  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_internal/cli/base_command.py&quot;, line 105, in _run_wrapper    status = _inner_run()             ^^^^^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_internal/cli/base_command.py&quot;, line 96, in _inner_run    return self.run(options, args)           ^^^^^^^^^^^^^^^^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_internal/cli/req_command.py&quot;, line 68, in wrapper    return func(self, options, args)           ^^^^^^^^^^^^^^^^^^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_internal/commands/install.py&quot;, line 387, in run    requirement_set = resolver.resolve(                      ^^^^^^^^^^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_internal/resolution/resolvelib/resolver.py&quot;, line 182, in resolve    self.factory.preparer.prepare_linked_requirements_more(reqs)  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_internal/operations/prepare.py&quot;, line 559, in prepare_linked_requirements_more    self._complete_partial_requirements(  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_internal/operations/prepare.py&quot;, line 474, in _complete_partial_requirements    for link, (filepath, _) in batch_download:                               ^^^^^^^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_internal/network/download.py&quot;, line 313, in __call__    filepath, content_type = self._downloader(link, location)                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_internal/network/download.py&quot;, line 185, in __call__    bytes_received = self._process_response(                     ^^^^^^^^^^^^^^^^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_internal/network/download.py&quot;, line 208, in _process_response    return self._write_chunks_to_file(           ^^^^^^^^^^^^^^^^^^^^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_internal/network/download.py&quot;, line 218, in _write_chunks_to_file    for chunk in chunks:                 ^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_internal/cli/progress_bars.py&quot;, line 61, in _rich_download_progress_bar    for chunk in iterable:                 ^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_internal/network/utils.py&quot;, line 65, in response_chunks    for chunk in response.raw.stream(                 ^^^^^^^^^^^^^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_vendor/urllib3/response.py&quot;, line 622, in stream    data = self.read(amt=amt, decode_content=decode_content)           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_vendor/urllib3/response.py&quot;, line 560, in read    with self._error_catcher():         ^^^^^^^^^^^^^^^^^^^^^  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/contextlib.py&quot;, line 158, in __exit__    self.gen.throw(value)  File &quot;/home/lzm/anaconda3/envs/SAM2/lib/python3.12/site-packages/pip/_vendor/urllib3/response.py&quot;, line 455, in _error_catcher    raise ProtocolError(&quot;Connection broken: %r&quot; % e, e)pip._vendor.urllib3.exceptions.ProtocolError: (&quot;Connection broken: OSError(28, &#x27;设备上没有空间&#x27;)&quot;, OSError(28, &#x27;设备上没有空间&#x27;))
+使用df -h查看，发现根分区已占用 95%（仅剩 2.7G），而Python包安装需要临时空间（在/tmp），因此操作失败。因为没有剩下的未分配空间，扩展操作起来比较麻烦，所以使用了以下临时解决方法，实测有效：
+
+在内存充足的home目录新建一个tmp文件夹
+打开一个终端，使用命令export TMPDIR=$HOME/tmp（不能换终端，该命令为临时的）
+而后就可以开始下载，临时文件会改为存储在/home/tmp中
+
+]]></content>
+      <categories>
+        <category>Solution</category>
+      </categories>
+      <tags>
+        <tag>Ubuntu</tag>
+        <tag>Anaconda</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Tokenizer</title>
+    <url>/2025/07/28/tokenizer/</url>
+    <content><![CDATA[分词粒度
+在Tokenizer中可分为word，sub-word，charlevel三个分词等级，其中word level存在以下问题：
+
+超大的vocabulary size, 比如中文的常用词可以达到20W个；
+通常面临比较严重的OOV问题；
+vocabulary 中存在很多相似的词。
+
+charlevel存在以下问题：
+
+文本序列会很长；
+无法对语义进行比较好的表征。
+
+而sub-word则介于word和char之间，它不会对高频词汇进行分词，而是对低频词汇进行分词，是目前的主流方法。
+
+
+
+BPE（Byte Pair Encoding）
+BPE是一种sub-word的分词方法，其tokenize的具体步骤如下：
+
+统计输入中所有出现的单词并在每个单词后加一个单词结束符 -&gt; [‘hello’: 6, ‘world’: 8, ‘peace’: 2]（避免一个词为另一个词的子词的情况）
+将所有单词拆成单字 -&gt; {‘h’: 6, ‘e’: 10, ‘l’: 20, ‘o’: 14, ‘w’: 8, ‘r’: 8, ‘d’: 8, ‘p’: 2, ‘a’: 2, ‘c’: 2, ‘’: 3}
+合并最频繁出现的单字(l, o) -&gt; {‘h’: 6, ‘e’: 10, ‘lo’: 14, ‘l’: 6, ‘w’: 8, ‘r’: 8, ‘d’: 8, ‘p’: 2, ‘a’: 2, ‘c’: 2, ‘’: 3}
+合并最频繁出现的单字(lo, e) -&gt; {‘h’: 6, ‘lo’: 4, ‘loe’: 10, ‘l’: 6, ‘w’: 8, ‘r’: 8, ‘d’: 8, ‘p’: 2, ‘a’: 2, ‘c’: 2, ‘’: 3}
+反复迭代直到满足停止条件
+
+而后，在得到子词表后，对句子进行分词。在上述算法执行后，如果句子中仍然有子字符串没被替换但所有subword都已迭代完毕，则将剩余的子词替换为特殊token。原则上这个特殊的token出现的越少越好，往往用这个特殊token的数量来评价一个tokenizer的好坏程度，这个token出现的越少，tokenizer的效果往往越好。
+PS：由BPE算法的串行性可知，if-else分支很多，GPU加速有限，很多时候进行tokenizing的时候，GPU util都是0。
+
+
+
+BBPE（Byte BPE）
+使用BPE算法进行分词时，如果训练的语料不是英文，或者为特殊符号，则无法进行分词。
+而BBPE用比特构建最基础词表，将BPE的从字符级别扩展到子节（Byte）级别。在byte序列上使用BPE算法进行相邻合并，其核心思想是从字节开始，不断找词频最高、且连续的两个字节组合合并，直到达到目标词数。这样的方式可以更好地处理多语言文本和特殊字符。例如，在处理包含多种语言的文本时，传统的 BPE 可能会因为不同语言的字符编码差异而遇到问题，但BBPE以一个字节为一种 “字符”，不管实际字符集用了几个字节来表示一个字符。
+基于上述这种特性，BBPE能够实现跨语言tokenize，但是似乎可能会导致乱码问题？？？（例如中文）
+
+
+
+WordPiece
+wordpiece算法可以看作是BPE的变种。不同的是，WordPiece基于概率生成新的subword而不是下一最高频单字对，即对于子词A和B，观察它们合并之后的出现子词AB是否为常见情况，即下述指标越大越好：
+P(AB)P(A)P(B)\frac{P(AB)}{P(A)P(B)}
+P(A)P(B)P(AB)​
+
+
+
+Unigram
+不同于BPE和WordPiece，Unigram最大化句子被当前词表切分的总概率。
+Unigram基于以下假设：一个句子是由若干个子词组成的，每个子词是独立生成的（即一元语言模型），目标是找到最大概率的子词组合方式：
+max(s1,...,sn)∈segmentations(x)∏i=1nP(si)max_{(s_1,...,s_n) \in segmentations(x)} \prod_{i=1}^{n} P(s_i)
+max(s1​,...,sn​)∈segmentations(x)​i=1∏n​P(si​)
+其中P(si)P(s_i)P(si​)为每个子词的概率（从语料库中训练得到），tokenize流程大致如下：
+
+对于一个语料库，得到其包含所有的子词，统计所有子词出现的频次，得到子词出现的概率（需要进行穷举，时间复杂度非常高，由此引入维特比（Viterbi）算法解决这个问题，会给出很多条分词路径）；
+对于一个词，可以由不同的子词拼成，由此可计算得到该词出现概率的不同值，由此根据最大的概率，对所有的word进行tokenize；
+对于每一个word，我们选取了一个分词方式，使其概率也就是score最高，那么这些score相加得到一个总分total_score。现在对于语料库中生成的子词进行逐个去除，去除后重新计算其影响的word的score，看total_score下降了多少，选择下降最少的token进行去除，重复这个步骤直到子词数量满足要求。
+
+
+
+
+SentencePiece
+SentencePiece是 Google 研发的一个 用于训练和使用子词（subword）分词器的开源库和工具集，是一个完整的、端到端的分词解决方案，该模型可以代替预训练模型(BERT,XLNET)中词表的作用。
+
+支持多种subword算法. 支持BPE算法, unigram语言模型算法
+大多数的无监督分词算法会假设词汇表是无限的（传统）, 但是sentencepiece训练分词模型时, 会预先确定词汇表大小, 例如8k, 16k, 32k.
+纯数据驱动. SentencePiece直接用句子训练tokenizer和detokenizer, 不需要pre-tokenization。使用BPE这类算法进行分词时，在pre-tokenization时，会基于空格进行，这样的间隔信息损失是不可逆的。SentencePiece把输入文本先转为一个unicode字符序列, 这样, 空格也被当作一个标准符号处理. 为了明确的把空格当作一个token处理, 首先会把空格转为元符号U+2581，消除了不同语言分词之间的gap
+支持子词正则化regularization和BPE dropout，前者会按概率采样一条随机的分词路径而不是指标最优的分词路径，避免模型过拟合某个唯一分词路径；后者则每一个合并操作都有一个被随机跳过的概率，保留选取的两个子词进行下一步
+
+
+
+
+参考资料
+
+https://kangkang37.github.io/2024/07/29/sentencepiece/
+
+]]></content>
+      <categories>
+        <category>NLP</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+        <tag>LLM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>《Thinking in 360°:Humanoid Visual Search in the Wild》论文阅读笔记</title>
+    <url>/2025/12/07/thinkin360/</url>
+    <content><![CDATA[Introduction
+人类通过头部与眼睛的协同运动实现高效的 360° 主动视觉搜索，而传统方法仅依赖静态图像，忽略了具身性与三维交互，并不像在真实场景中寻找物品。
+文中提出了Humanoid Visual Search, HVS，模仿人类这种搜索方式，主要有以下特点：
+
+HVS是交互式的，从某一个局部视角出发，在一个轻量级的360°场景中行动，每一次头部旋转都会改变局部视角，得到一个新的视觉输入，实现一个闭环的感知-行动流程；
+HVS是具身的，将视觉推理与物理动作紧密耦合，要求任务中的智能体将“头部运动”作为其思考的一部分，模拟了人类的搜索步骤。
+
+同时，具身的搜索任务也被分为两种核心形式：
+
+humanoid object search (HOS)：类人的目标搜索，定位并将视线聚焦在目标物体上，一般作为操作任务的前置步骤；
+humanoid path search (HPS)：识别通往目的地的可导航路径，并调整身体方向，作为移动的前置步骤。
+
+这种高级的视觉–空间推理能力非常适用于人造环境，人造环境中通常存在丰富的结构复杂性、语义复杂性以及体积复杂性，是此类推理最有价值的测试场景。
+因此，HVS的关注点从简单受限的场景转向现实中的挑战，例如：
+
+在地铁站多层的迷宫结构中导航以找到特定出口；
+在大型购物中心中找到特定的商店；
+在摆满货物的超市货架中找到某个特定产品。
+
+但是，由于现有的Embodied AI平台存在感知真实感不足和局限于简单家庭场景的局限性，无法代表上述所属的复杂人造环境。
+为解决这种局限性，文中提出 H∗Bench，一个包含多样现实场景、适用于 HVS 的全新benchmark，包括但不限于交通枢纽（机场和地铁站）、大型零售空间（超市和购物中心）以及公共机构（图书馆和博物馆），如下图所示。其中每张全景图都密集地标注了具身任务问题及对应的真实行动，包括用于 HOS 的最佳头部朝向和用于 HPS 的地平面单位方向向量。
+
+	
+
+
+
+
+Humanoid Visual Search
+人类在真实空间中进行决策时，会受到一些关键的决策点的影响，在遇到这些关键点后，我们会停下来进行观察、推理并尝试理清一些歧义，而后才能自信地采取下一步行动。
+HVS的任务也同样聚焦于这些关键点，将full-body motion抽象为头部旋转这一原子操作。
+问题表述
+想象一个具有局部FoV的智能体正在穿过地铁站中复杂的多走廊交叉口，其任务是尽快找到地铁站出口。
+有限的FoV要求头部与眼睛运动之间紧密协调：即头部通过旋转定位到新的观察点来探索未知区域，而眼睛通过凝视看到任务相关细节进行利用。
+具体形式上，将环境建模为一张360°全景图像，所有可能的观察集合定义为为So=oϕ,γS_o = {o_{\phi, \gamma}}So​=oϕ,γ​，包含从该全景中采样的窄FoV图像，每个视角由其方位角ϕ\phiϕ和俯仰角唯一确定。
+现在HVS的目标是找到最优方向(ϕ∗,γ∗)(\phi^{*}, \gamma^{*})(ϕ∗,γ∗)，在给定语言指令xxx和视觉观察oϕ,γo_{\phi, \gamma}oϕ,γ​，使得任务成功的概率rsr_srs​最大化：
+(ϕ∗,γ∗)=argmaxϕ,γP(rs∣oϕ,γ,x)(\phi^{*}, \gamma^{*})=argmax_{\phi, \gamma}P(r_s | o_{\phi, \gamma}, x)
+(ϕ∗,γ∗)=argmaxϕ,γ​P(rs​∣oϕ,γ​,x)
+HOS
+HOS解决的是在未知3D环境中主动搜索目标的问题，其方式是找到一个最终观察方向(ϕ∗,γ∗)(\phi^{*}, \gamma^{*})(ϕ∗,γ∗)，使得目标出现在视图中央的 central foveal region（中央凹区域）中。
+HPS
+HPS要求智能体搜索通向目标位置的可导航路径，这是移动之前的高层规划，目标是确定一个最终的朝向ϕ∗\phi^{*}ϕ∗。
+
+利用MLLM进行HVS
+文中将HVS建模为一个多模态推理任务，通过将MLLM的工具使用和头部旋转耦合实现。
+具体方案采用了《Thinking with Images for Multimodal Reasoning:
+Foundations, Methods, and Future Frontiers》这篇工作的工具增强型MLLM，将智能体策略定义为πθ(yt,at∣ot,x,Ht)\pi_{\theta}(y_t,a_t|o_t,x,H_t)πθ​(yt​,at​∣ot​,x,Ht​)。
+具体来说，在每一个时间步ttt，智能体会生成一个文本形式的CoT yty_tyt​和一个动作ata_tat​，其条件为：
+
+当前的观察 ot=oϕ,γo_t = o_{\phi, \gamma}ot​=oϕ,γ​；
+语言指令 xxx；
+历史状态 Ht=(oi,yi,ai)i=1t−1H_t = {(o_i,y_i,a_i)}_{i=1}^{t-1}Ht​=(oi​,yi​,ai​)i=1t−1​
+
+每一个episode允许一系列旋转动作，并以提交动作ata_tat​作为结束标志，最终把动作ata_tat​提交作为最终输出。动作空间包含两个动作原语：
+Rotate
+Rotateatrot=(Δϕ,Δγ)Rotate a_t^rot = (\Delta \phi, \Delta \gamma)Rotateatr​ot=(Δϕ,Δγ)调整观察方向（右/上方向为正，yaw循环），使得：
+
+ϕt+1=ϕt+Δϕ\phi_{t+1} = \phi_t + \Delta \phiϕt+1​=ϕt​+Δϕ
+γt+1=γt+Δγ\gamma_{t+1} = \gamma_t + \Delta \gammaγt+1​=γt​+Δγ
+
+Submit
+SubmitatsubSubmit a_t^{sub}Submitatsub​ 将当前方向作为最终估计的(ϕ^,γ^)(\hat{\phi}, \hat{\gamma})(ϕ^​,γ^​)并终止当前episode。
+
+MLLM Post-training
+MLLM训练于静态、无embodied的互联网数据，并不具备空间常识和主动3D规划能力，即使最先进的GPT-4o成功率也仅约20%。
+因此，通过下图所示的两阶段后训练流程将MLLMs适配为有效的视觉搜索智能体。
+
+	
+
+SFT
+在一个精心挑选的多轮数据集上进行SFT，为模型灌输基本的任务导向推理能力和工具使用能力。
+这一步骤能够教会模型如何根据多模态输入生成结构化的行动计划，建立一个强有力的行为先验。
+Multi-Turn RL
+使用GRPO进行进一步的策略优化。这一步的RL鼓励长时间尺度的推理，对于发展稳健、可泛化的搜索策略至关重要。
+
+
+
+H*Bench
+数据集概述
+H*Bench包含大约3000个带有注释的任务实例，这些实例来自多种高分辨率的全景视频（最高可达7680×38407680 × 38407680×3840）。
+通过为每个任务实例设置四种不同的初始朝向，获得了共12000个搜索episode。
+H*Bench的数据来自全球各地区以及开放平台，具有广泛的地理覆盖范围和场景多样性，系统地划分为6大场景类别和18个细粒度场景类型。具体统计数据如下图所示：
+
+	
+
+
+Benchmark Construction
+Task Annotation
+对于一个全景图而言，在一个透视视角的界面中对其进行标注，根据已知视角角度(ϕ,γ)(\phi, \gamma)(ϕ,γ)从全景渲染该视角下的局部的 FoV 图像。
+标注者可以自由旋转虚拟相机来检查场景，确定一个合适的具身搜索任务，而后编写自然语言指令，并通过绘制边界框来标记目标，以指明其最优方向。该边界框随后被反投影到全景图，其中心即为目标的最优方向(ϕ∗,γ∗)(\phi^*, \gamma^*)(ϕ∗,γ∗)；对于 HPS仅保留ϕ∗\phi^*ϕ∗，因为对于路径规划而言，可将行走平面近似为二维平面。
+Cold-Start Data Curation
+由前文可知，在一个搜索episode的训练中，搜索过程并不是一步到位的，而是给定了当前视角和最优目标视角的Ground Truth后，通过多轮“旋转 + 推理”才能最终提交。
+为了构建用于 SFT 的高质量多轮决策数据，从任务实例中选取一个子集，并通过prompting一个强大的 MLLM（GPT-4o）来生成结构化的 CoT。
+采用人类参与的构建流程，标注者会审查并修改生成的CoT推理，以消除幻觉，确保推理是基于可见的视觉线索、并保持风格一致。
+最终的数据集包含 2000 条多轮次数据，包含视觉观察、已验证的 CoT 推理和动作，用于MLLM冷启动 SFT 训练。总共有 6 名标注者投入了 250 小时进行具身任务标注和 CoT 修订工作。
+Difficulty Taxonomy
+对于 HOS，根据目标物体在初始视角中的可见性来定义任务难度。
+具体的，计算一个可见度比例ddd，它是初始视角中目标可见区域面积与整个目标面积的比值。可见度越高，感知线索越强，探索难度越低；反之则需要更多的视觉探索。因此，将 HOS 样本分为 Easy、Medium 和 Hard 三类。
+
+	
+
+对于 HPS，难度取决于场景是否包含文本信息，以及视觉 / 文本线索是否与实际路径方向一致。这两个因素共同定义了四种难度级别。
+
+	
+
+
+	
+
+
+	
+
+
+	
+
+
+
+
+实验
+实验设置
+实现细节
+在HOS和HPS的混合数据集上微调模型，SFT基于LLaMA-Factory实现，RL 训练在开源框架 VAGEN 中进行。
+对 Qwen2.5-VL-3B-Instruct 进行全参数 SFT，共 3 个 epoch；得到的模型称为 HVS-3B (w/ SFT only)。
+在 RL 阶段，训练了 70 步。得到的模型记为 HVS-3B。
+实验中使用的 prompts 如下图所示：
+
+	
+
+此外，还评估了支持多图像输入的开源和商用模型。
+评估指标
+对于一次最终提交的方向(ϕ^,γ^)(\hat{\phi}, \hat{\gamma})(ϕ^​,γ^​)，以标注的Bounding Box的中心方向(ϕ∗,γ∗)(\phi^*, \gamma^*)(ϕ∗,γ∗)为参考，如果提交的方向落到了以该中心方向为中心的可容忍区域 [ϕ∗−πϕ,ϕ∗+πϕ]×[γ∗−πγ,γ∗+πγ][ \phi^* - \pi \phi, \phi^* + \pi \phi] × [\gamma^* - \pi \gamma, \gamma^* + \pi \gamma][ϕ∗−πϕ,ϕ∗+πϕ]×[γ∗−πγ,γ∗+πγ]，则看作成功。
+其中，τϕ=max⁡(wϕ2,τϕ),τγ=max⁡(wγ2,τγ)\tau_{\phi} = \max\left(\frac{w_{\phi}}{2}, \tau_{\phi}\right),  \tau_{\gamma} = \max\left(\frac{w_{\gamma}}{2}, \tau_{\gamma}\right)τϕ​=max(2wϕ​​,τϕ​),τγ​=max(2wγ​​,τγ​)，wϕw_{\phi}wϕ​和wγw_{\gamma}wγ​分别为Bounding Box的Angular Width和Angular Height。
+根据前文所述，HOS任务需要评估(ϕ^,γ^)(\hat{\phi}, \hat{\gamma})(ϕ^​,γ^​)，而HPS任务只评估(ϕ^)(\hat{\phi})(ϕ^​)。为了模拟人类的中央凹视野，HOS任务容忍范围设置为πϕ=30°,πγ=20°\pi \phi = 30°, \pi \gamma = 20°πϕ=30°,πγ=20°；而为了反映对精准运动方向的需求，HPS的容忍范围设置为πϕ=10°\pi \phi = 10°πϕ=10°。
+
+探究 MLLM 的具身视觉搜索能力
+主要结果
+下表显示商用模型与开源模型之间存在显著性能差距。
+
+	
+
+在 HOS（31.96）和 HPS（33.00）任务中，Gemini 2.5-Pro 是整体表现最好的商用模型；开源模型中，Gemma-3 系列取得了最好结果。
+有趣的是，更大的模型规模并不能保证更好的性能。对于 Gemma-3 系列和 Qwen2.5-VL 系列来说，小模型（4B/3B）在 HOS 中反而超过了更大的 12B/7B 模型，并且在 HPS 上表现相当。
+错误分析
+在 HOS中，错误来自以下两个方面：
+
+视觉落地能力不足：模型难以在杂乱环境中稳定识别目标；
+感知-行动脱节：模型能看到目标，但无法进行精细的中心凹对准。
+
+在 HPS中，错误主要有三类：
+
+
+视觉-行动不匹配：模型能看到路牌等视觉线索，但不能将其转化为行动；
+
+
+缺乏物理常识：行动违反 3D 约束（如试图穿墙）；
+
+
+缺乏社会-空间常识：模型忽视建筑环境中的隐性规则（如楼梯用途、警戒带、斑马线）。
+
+
+对结果的分解具体如下图所示：
+
+	
+
+以上的发现都证明：“MLLM 能在被动的世界描述中构建语言基础的空间模型，但无法构建面向具身交互的物理落地模型”
+
+后训练的作用与局限性
+SFT和RL的局限性
+SFT 提供了大部分性能增益，在 HOS 上，SFT 使整体得分从 14.83 提升到 40.83（↑26.00）；在 HPS 上，从 6.44 提升到 23.00（↑16.56）。
+随后的 RL 带来额外但较小的增益：HOS ↑6.55，HPS ↑1.94。
+这表明SFT 构建了基本任务能力，而 RL 充当进一步优化的步骤。具体而言，后训练提升了以下关键能力：
+
+
+对旋转角度的精确控制；
+
+
+使用大角度转向来探索新区域；
+
+
+根据方向性标志采取行动，具体如下图所示。
+
+
+
+	
+
+此外，如果没有 SFT 而直接应用 RL，会削弱模型的指令跟随能力。
+任务相关的效果差异
+后训练的收益因任务复杂度而异。对于简单的HOS，文中所训练的模型（47.38）超过最先进的 Gemini2.5-Pro（31.96）。但对于复杂的路径搜索，其模型得分（24.94）落后于最优模型（33.00）。
+这一差距说明后训练在提升高阶空间推理能力方面存在局限（模型的基础能力很重要）。
+RL在复杂任务中的负面效果
+在 HPS 中，RL 将模型在中等难度任务的表现从 23.03 降到 20.18；在极端难度上从 14.81 降到 12.04。这些场景的特点是：视觉线索与最优路径之间存在错位，这在错误分类中被认为难度很高。
+文中推测性能下降源于 reward hacking，模型学会利用奖励信号而非真正提升推理能力。这更证明了，设计能够在所有难度下与任务目标一致的奖励函数是非常困难的。
+
+经过上述的分析，可以得到关键结论：SFT+RL 在HOS上能够显著提升视觉落地与探索能力；但在HPS上难以传授物理、空间和社会常识，这些能力往往是隐性的、情境化的、过程性的。
+
+HOS和HPS的进一步分析
+
+	
+
+上图分析了MLLM Baseline、in-task、cross-task和HVS四种方案的性能，其中in-task即在同一个任务上训练+测试，比如在HOS上训练，在HPS上测试；而cross-task则是在一个任务上训练，在另一个任务上测试。
+in-task的优越性
+由上图可知，in-task训练一般带来最强性能，但有一个例外：一个仅用 HOS 训练的模型在简单 HPS 上达 37.8%，超过Baseline（7.0%）和 HPS 专用模型（33.8%）。
+作者推测，这些简单的HOS任务等价于“简单物体搜索”，有清晰的视觉线索来引导路径，使 HOS 中的强物体识别能力可以很好迁移，更具有泛化性。
+cross-task的泛化性
+此外，可以由结果观察到明显的双向增益：
+
+
+用HOS训练能将HPS从 6.4% → 20.7%；
+
+
+用HPS训练能将HOS从 14.8% → 29.5%。
+
+
+原因是HPS中学到的主动探索和路径推理能帮助HOS，HOS中学到的视觉落地能力也能帮助HPS，这些能力都是互相促进的。
+混合数据训练
+使用混合的HOS + HPS数据可获得整体最佳表现。但存在如下挑战：性能提升分布不均衡，某些难度上提升会导致其他难度下降。因此在训练通用的 humanoid agent 时，如何平衡这一权衡非常关键。
+
+消融实验
+Reward Shaping
+文中对HPS任务中的RL环节尝试三种奖励设计方案：
+
+
+format + correctness；
+
+
+format + correctness + distance-to-goal；
+
+
+format + distance-to-goal。
+
+
+这些奖励变体只在简单难度提升性能，而在更难场景中往往性能下降，如下表所示。这更强调了HPS这个任务的难度，需要更先进的方案。
+
+	
+
+Training Rollout and Context Length
+采用短rollout的 GRPO 的模型在测试时进行 test-time scaling 即可达到长 rollout 的性能，同时收敛更快。因此短 rollout 可保持训练效率。
+此外，对于 HVS 模型， 输入只包含最近 2 轮的历史短上下文对话就已足够。
+主动视觉 vs. 被动视觉
+消融实验还比较了下述两种搜索方案：
+
+
+主动视觉搜索：智能体旋转相机逐步获取信息；
+
+
+被动视觉：直接分析完整全景图。
+
+
+主动方式在以下两个方面上更优：
+
+
+更符合高效的类人搜索策略；
+
+
+避免全景图畸变与 MLLM 的图像处理先验冲突（MLLM训练分布中一般不具备这种全景相机的分布）。
+
+
+实验也证明了这一点，使用 Gemma-3-4B-it 时，被动方式显著降低性能，如下图所示。
+
+	
+
+具身 vs. 非具身 Benchmark
+
+	
+
+如上图所示，2D 模型 Mini-o3 与 Chain-of-Focus 在非具身的 V* Bench上达到近饱和性能（88.2%、88.0%），但在具身 H*Bench 上表现暴跌到 2.5% 与 11.6%。
+说明从互联网被动数据学到的能力无法迁移到 3D 具身交互，且图中显示 HVS-3B 也只有 38.4% 成功率，显示该问题远未解决。
+虽然3D具身交互仍然是个问题，但反过来，HVS-3B在 V* Bench 上仍保持 65.5% 成功率。这说明在具身benchmark上进一步训练的模型学习到了 3D 具身搜索，同时没有过多损害其 2D 搜索能力，展示出统一模型的潜力。
+
+
+
+Discussion and Future Work
+这篇文章主要研究如何纠正当前视觉模型偏向 2D、passive 的问题，转向 embodied + 3D + active search。
+post-training可提升一些低层次的感知-运动能力，例如：
+
+视觉 grounding（识别物体位置）；
+基础 exploration（旋转、查看死角）；
+控制角度输出（如 10°、30° 转动）。
+
+而对于一些高层次的常识推理而言，post-training展现出了一些瓶颈，例如：
+
+
+physical commonsense（不能穿墙、不能走悬空）；
+
+
+spatial commonsense（可通行的楼梯、道路、拐角…）；
+
+
+social commonsense（警戒线不能跨越、人应该走斑马线）。
+
+
+此外，文章发现 RL 可以在简单任务上提升能力，但在复杂任务中会存在误导（reward misalignment）、奖励欺骗（reward hacking）、过拟合简单的 pattern等问题。
+性能上表现为：
+
+复杂 HPS 性能下降；
+把不正确的策略误当成“高分”策略；
+模型变得更僵化、规则化。
+
+这是 RL 在大模型中的通病，reward的设计很难对齐高阶推理目标，一个好的奖励设计是非常困难的。
+]]></content>
+      <categories>
+        <category>Robotics</category>
+      </categories>
+      <tags>
+        <tag>DL</tag>
+        <tag>Robotics</tag>
+        <tag>CV</tag>
+      </tags>
+  </entry>
+</search>
