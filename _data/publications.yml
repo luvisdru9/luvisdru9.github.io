@@ -1,0 +1,36 @@
+- title: Learning Generalizable Visuomotor Policies from Multimodal Feedback
+  authors:
+    - name: Ziming Li
+      self: true
+    - name: Collaborator A
+    - name: Collaborator B
+  venue: Conference on Robot Learning
+  year: "2026"
+  status: Under Review
+  image: /assets/img/publication-visuomotor.svg
+  paper_link: "#"
+  code_link: https://github.com/luvisdru9
+
+- title: Structured Reasoning for Embodied Agents with Foundation Models
+  authors:
+    - name: Ziming Li
+      self: true
+    - name: Collaborator A
+  venue: International Conference on Robotics and Automation
+  year: "2025"
+  status: Preprint
+  image: /assets/img/publication-reasoning.svg
+  paper_link: "#"
+  code_link: https://github.com/luvisdru9
+
+- title: Reliable Evaluation of Interactive Learning Systems
+  authors:
+    - name: Ziming Li
+      self: true
+    - name: Collaborator A
+    - name: Collaborator B
+  venue: Workshop on Embodied AI
+  year: "2025"
+  status: Workshop
+  image: /assets/img/publication-evaluation.svg
+  paper_link: "#"

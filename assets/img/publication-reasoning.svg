@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 480" role="img" aria-labelledby="title">
+  <title id="title">Abstract structured reasoning illustration</title>
+  <defs><linearGradient id="bg" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#123c58"/><stop offset="1" stop-color="#348bb6"/></linearGradient></defs>
+  <rect width="720" height="480" rx="36" fill="url(#bg)"/>
+  <g fill="none" stroke="#bde8ff" stroke-width="4" opacity=".62"><path d="M155 240h120m54 0h93m54 0h84"/><path d="M302 213v-70h120v70M449 267v70H329v-70"/></g>
+  <g fill="#fff"><circle cx="126" cy="240" r="35" opacity=".92"/><circle cx="302" cy="240" r="35" opacity=".78"/><circle cx="449" cy="240" r="35" opacity=".78"/><circle cx="589" cy="240" r="35" opacity=".92"/><circle cx="422" cy="116" r="29" opacity=".65"/><circle cx="329" cy="364" r="29" opacity=".65"/></g>
+  <g fill="#1d668f"><circle cx="126" cy="240" r="10"/><circle cx="302" cy="240" r="10"/><circle cx="449" cy="240" r="10"/><circle cx="589" cy="240" r="10"/></g>
+  <circle cx="590" cy="90" r="84" fill="#87ddff" opacity=".15"/>
+</svg>

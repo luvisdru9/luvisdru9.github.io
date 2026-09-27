@@ -1,0 +1,4 @@
+<section class="section" id="honors"><div class="page-shell">
+  <div class="section-heading reveal"><h2>Honors</h2></div>
+  <div class="honor-list">{% for item in site.data.honors %}<article class="honor-item reveal"><div class="honor-image"><img src="{{ item.image | relative_url }}" alt="{{ item.title }}" loading="lazy"></div><div class="honor-main"><h3>{{ item.title }}</h3><p>{{ item.issuer }}</p>{% if item.description %}<span>{{ item.description }}</span>{% endif %}</div><time>{{ item.year }}</time></article>{% endfor %}</div>
+</div></section>

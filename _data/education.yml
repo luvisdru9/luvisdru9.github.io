@@ -1,0 +1,16 @@
+- institution: University Name
+  school: School of Artificial Intelligence
+  degree: M.S. in Computer Science
+  detail: Focus on embodied intelligence and foundation models.
+  period: 2025 — Present
+  location: China
+  mark: MSc
+
+- institution: Previous University
+  school: School of Computer Science
+  degree: B.Eng. in Artificial Intelligence
+  detail: Coursework in machine learning, robotics, and software systems.
+  period: 2021 — 2025
+  location: China
+  mark: BEng
+

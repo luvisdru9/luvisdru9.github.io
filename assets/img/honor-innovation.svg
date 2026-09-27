@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="title">
+  <title id="title">Innovation competition trophy</title>
+  <defs><linearGradient id="bg" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#fff1d7"/><stop offset="1" stop-color="#ffe0a3"/></linearGradient></defs>
+  <rect width="640" height="400" rx="34" fill="url(#bg)"/>
+  <circle cx="320" cy="184" r="124" fill="#fff" opacity=".66"/>
+  <path d="M255 94h130v70c0 67-34 102-65 102s-65-35-65-102z" fill="#e7a31d"/><path d="M255 125h-51v33c0 48 29 76 74 76M385 125h51v33c0 48-29 76-74 76" fill="none" stroke="#c9850b" stroke-width="17" stroke-linecap="round"/>
+  <rect x="303" y="257" width="34" height="57" rx="8" fill="#c9850b"/><rect x="252" y="306" width="136" height="35" rx="12" fill="#7e5410"/>
+  <path d="m320 126 13 27 30 4-22 21 5 30-26-14-26 14 5-30-22-21 30-4z" fill="#fff8dc"/>
+</svg>

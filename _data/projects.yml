@@ -1,0 +1,27 @@
+- title: Embodied Agent Playground
+  type: Research prototype · Placeholder
+  description: A modular sandbox for testing perception, planning, and action policies in interactive environments.
+  tags: [Python, Robotics, VLA]
+  icon: fa-solid fa-cubes
+  theme: violet
+  link: /MyBlog/
+  link_label: Read related notes
+
+- title: LLM Architecture Notes
+  type: Knowledge project
+  description: Structured technical notes covering transformers, adaptation, alignment, and modern model systems.
+  tags: [LLM, NLP, Research]
+  icon: fa-solid fa-book-open
+  theme: blue
+  link: /MyBlog/
+  link_label: Open the blog
+
+- title: Efficient Model Toolkit
+  type: Engineering concept · Placeholder
+  description: A future collection of reproducible utilities for evaluation, inference, and model experimentation.
+  tags: [Tooling, Evaluation, Open Source]
+  icon: fa-solid fa-gauge-high
+  theme: green
+  link: https://github.com/luvisdru9
+  link_label: View GitHub
+

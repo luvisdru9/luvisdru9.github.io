@@ -1,0 +1,19 @@
+<section class="section publications-section" id="publications"><div class="page-shell">
+  <div class="section-heading reveal"><h2>Publications</h2></div>
+  <div class="publication-list">
+    {% for item in site.data.publications %}
+    <article class="publication-item reveal">
+      <div class="publication-image"><img src="{{ item.image | relative_url }}" alt="Visual preview for {{ item.title }}" loading="lazy"></div>
+      <div class="publication-main">
+        <h3>{{ item.title }} <span class="publication-status">{{ item.status }}</span></h3>
+        <p class="publication-authors">{% for author in item.authors %}<span{% if author.self %} class="author-self"{% endif %}>{{ author.name }}</span>{% unless forloop.last %}<span class="author-separator">,</span>{% endunless %}{% endfor %}</p>
+        <p class="publication-venue"><i class="fa-solid fa-building-columns" aria-hidden="true"></i><span>{{ item.venue }}</span><time>{{ item.year }}</time></p>
+        <div class="publication-links">
+          {% if item.paper_link %}<a href="{{ item.paper_link }}"><i class="fa-regular fa-file-lines"></i> Paper</a>{% endif %}
+          {% if item.code_link %}<a href="{{ item.code_link }}"><i class="fa-brands fa-github"></i> Code</a>{% endif %}
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</div></section>

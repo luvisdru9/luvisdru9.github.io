@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 480" role="img" aria-labelledby="title">
+  <title id="title">Abstract evaluation dashboard illustration</title>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#153f38"/><stop offset="1" stop-color="#48a681"/></linearGradient></defs>
+  <rect width="720" height="480" rx="36" fill="url(#bg)"/>
+  <rect x="92" y="86" width="536" height="308" rx="28" fill="#fff" fill-opacity=".11" stroke="#fff" stroke-opacity=".27"/>
+  <path d="M145 320l80-63 74 25 90-111 70 55 113-94" fill="none" stroke="#d7fff1" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#fff"><circle cx="145" cy="320" r="12"/><circle cx="225" cy="257" r="12"/><circle cx="299" cy="282" r="12"/><circle cx="389" cy="171" r="12"/><circle cx="459" cy="226" r="12"/><circle cx="572" cy="132" r="12"/></g>
+  <g fill="#d7fff1" opacity=".6"><rect x="145" y="353" width="96" height="8" rx="4"/><rect x="259" y="353" width="54" height="8" rx="4"/><rect x="331" y="353" width="134" height="8" rx="4"/></g>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="title">
+  <title id="title">Academic scholarship illustration</title>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dff8ef"/><stop offset="1" stop-color="#b9e3d5"/></linearGradient></defs>
+  <rect width="640" height="400" rx="34" fill="url(#bg)"/>
+  <path d="m320 86 225 96-225 96-225-96z" fill="#215b50"/><path d="M196 230v69c0 32 55 58 124 58s124-26 124-58v-69l-124 53z" fill="#347d6c"/>
+  <path d="M545 183v107" stroke="#d5a42b" stroke-width="11" stroke-linecap="round"/><circle cx="545" cy="307" r="18" fill="#d5a42b"/>
+  <path d="m320 116 151 65-151 64-151-64z" fill="#2e7062"/><circle cx="320" cy="181" r="17" fill="#e6fff6"/>
+</svg>

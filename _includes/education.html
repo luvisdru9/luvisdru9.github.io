@@ -1,0 +1,4 @@
+<section class="section education-section"><div class="page-shell">
+  <div class="section-heading reveal"><h2>Education</h2></div>
+  <div class="timeline-list reveal">{% for item in site.data.education %}<article class="timeline-item"><div class="timeline-mark">{{ item.mark }}</div><div class="timeline-main"><h3>{{ item.institution }}</h3><p class="timeline-subtitle">{{ item.school }}</p><p>{{ item.degree }}</p>{% if item.detail %}<p class="timeline-detail">{{ item.detail }}</p>{% endif %}</div><div class="timeline-meta"><strong>{{ item.period }}</strong><span>{{ item.location }}</span></div></article>{% endfor %}</div>
+</div></section>

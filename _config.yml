@@ -1,51 +1,35 @@
-# Basic Information 
-title: Ziming Li
-position: M.S. Student
-affiliation: Your Affiliation
-email: luvisdru9@outlook.com
+lang: en-US
 
-# Search Engine Optimization (SEO)
-# The following information is used to improve the website traffic from search engines, e.g., Google.
-keywords: Embodied AI, LLMs
-description: Personal homepage of luvisdru9
+# Identity
+title: Ziming Li
+title_zh: 李子铭
+position: M.S. Student
+field: Sun Yat-sen University
+affiliation: Independent Researcher
+affiliation_link:
+location: China
+email: luvisdru9@outlook.com
+intro: M.S. Student, School of Computer Science and Engineering, Sun Yat-sen University. 
+
+# Search engine optimization
+keywords: Embodied AI, Robot Learning, Large Language Models, NLP
+description: Personal homepage of Ziming Li — publications, selected projects, honors, and technical notes.
 canonical: https://luvisdru9.github.io/
 
-# Links 
-# If you don't need one of them, you may delete the corresponding line.
+# Links
 google_scholar: https://scholar.google.com/citations?user=G7RUWTEAAAAJ&hl=zh-CN
-blog_link: /MyBlog/
-# cv_link: assets/files/curriculum_vitae.pdf
-# github_link: https://github.com/
-# linkedin: https://www.linkedin.com/
-# twitter: https://twitter.com/
+github_link: https://github.com/luvisdru9
+blog_link: https://luvisdru9.github.io/MyBlog/
+cv_link:
+linkedin:
 
-# Images (e.g., your profile picture and your website's favicon) 
-# "favicon" and "favicon_dark" are used for the light and dark modes, respectively. 
-avatar: ./assets/img/avatar.jpg
-favicon: ./assets/img/favicon.png
-favicon_dark: ./assets/img/favicon-dark.png
+# Images
+avatar: /assets/img/Me.png
+favicon: /assets/img/favicon-light.png
+favicon_dark: /assets/img/favicon-dark.png
 
-# Footnote
-# You may use the option to disable the footnote, "Powered by Jekyll and Minimal Light theme."
-enable_footnote: false
+last_updated: September 2026
 
-# Auto Dark Mode
-# You may use the option to disable the automatic dark theme
-auto_dark_mode: true
-
-# Font
-# You can use this option to choose between Serif or Sans Serif fonts.
-font: "Sans Serif" # or "Sans Serif"
-
-# Google Analytics ID
-# Please remove this if you don't use Google Analytics
-google_analytics: UA-111540567-4
-
-# Use this project as a remote theme for GitHub Pages
-# See the guide here: https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/adding-a-theme-to-your-github-pages-site-using-jekyll
-remote_theme: yaoyao-liu/minimal-light
-
-# The following files will be removed from the generated website.
 exclude:
   - Gemfile
   - Gemfile.lock

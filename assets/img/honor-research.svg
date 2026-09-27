@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="title">
+  <title id="title">Research award certificate</title>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f1edff"/><stop offset="1" stop-color="#d8e7ff"/></linearGradient></defs>
+  <rect width="640" height="400" rx="34" fill="url(#bg)"/>
+  <rect x="48" y="42" width="544" height="316" rx="24" fill="#fff" stroke="#7663c6" stroke-width="4"/>
+  <circle cx="160" cy="198" r="66" fill="#6f5bd2"/><path d="m133 245-22 91 49-25 44 29-18-96" fill="#5542af"/><path d="m160 147 15 31 35 5-25 24 6 34-31-16-31 16 6-34-25-24 35-5z" fill="#fff"/>
+  <rect x="265" y="126" width="224" height="16" rx="8" fill="#302c48"/><rect x="265" y="165" width="169" height="10" rx="5" fill="#8c88a1"/><rect x="265" y="192" width="202" height="10" rx="5" fill="#b0acbf"/><rect x="265" y="248" width="112" height="9" rx="4.5" fill="#6f5bd2"/>
+</svg>

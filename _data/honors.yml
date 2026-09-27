@@ -1,0 +1,17 @@
+- year: "2026"
+  title: Outstanding Research Award
+  issuer: University Research Council
+  description: Placeholder for an academic or research distinction.
+  image: /assets/img/honor-research.svg
+
+- year: "2025"
+  title: First Prize · AI Innovation Challenge
+  issuer: National Student Technology Competition
+  description: Placeholder for a competition award or team achievement.
+  image: /assets/img/honor-innovation.svg
+
+- year: "2024"
+  title: Dean's Scholarship
+  issuer: School of Computer Science
+  description: Placeholder for a scholarship or academic recognition.
+  image: /assets/img/honor-scholarship.svg
