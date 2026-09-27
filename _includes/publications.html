@@ -11,6 +11,7 @@
         <div class="publication-links">
           {% if item.paper_link %}<a href="{{ item.paper_link }}"><i class="fa-regular fa-file-lines"></i> Paper</a>{% endif %}
           {% if item.code_link %}<a href="{{ item.code_link }}"><i class="fa-brands fa-github"></i> Code</a>{% endif %}
+          {% if item.video_link and item.video_link != "" %}<a href="{{ item.video_link }}" target="_blank" rel="noopener"><i class="fa-regular fa-circle-play"></i> Video</a>{% endif %}
         </div>
       </div>
     </article>

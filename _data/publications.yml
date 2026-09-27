@@ -1,36 +1,26 @@
-- title: Learning Generalizable Visuomotor Policies from Multimodal Feedback
+- title: "DHRCL: Training Code LLMs with Dense Hierarchical Rewards and Curriculum Learning"
   authors:
+    - name: Shuhang Wang
     - name: Ziming Li
       self: true
-    - name: Collaborator A
-    - name: Collaborator B
-  venue: Conference on Robot Learning
+    - name: Hui Cheng*
+  venue: arXiv
   year: "2026"
   status: Under Review
-  image: /assets/img/publication-visuomotor.svg
-  paper_link: "#"
-  code_link: https://github.com/luvisdru9
+  image: /assets/img/DHRCL.png
+  paper_link: https://arxiv.org/abs/2607.26457
+  video_link:
 
-- title: Structured Reasoning for Embodied Agents with Foundation Models
+- title: "RLMM-Flow: A Flow-based Mobile Manipulation Framework with Latent-Space Reinforcement Learning"
   authors:
+    - name: Shuhang Wang
     - name: Ziming Li
       self: true
-    - name: Collaborator A
-  venue: International Conference on Robotics and Automation
-  year: "2025"
+    - name: Le Zheng
+    - name: Hui Cheng*
+  venue: arXiv
+  year: "2026"
   status: Preprint
-  image: /assets/img/publication-reasoning.svg
-  paper_link: "#"
-  code_link: https://github.com/luvisdru9
-
-- title: Reliable Evaluation of Interactive Learning Systems
-  authors:
-    - name: Ziming Li
-      self: true
-    - name: Collaborator A
-    - name: Collaborator B
-  venue: Workshop on Embodied AI
-  year: "2025"
-  status: Workshop
-  image: /assets/img/publication-evaluation.svg
-  paper_link: "#"
+  image: /assets/img/RLMM.png
+  paper_link: https://arxiv.org/abs/2607.26460
+  video_link:

@@ -1,16 +1,17 @@
-- institution: University Name
-  school: School of Artificial Intelligence
-  degree: M.S. in Computer Science
-  detail: Focus on embodied intelligence and foundation models.
-  period: 2025 — Present
-  location: China
+- institution: Sun Yat-sen University
+  school: School of Computer Science and Engineering
+  degree: MEng in Computer Science and Technology
+  detail: Admitted via Recommendation Exemption
+  period: Sep. 2025 — Jun. 2028
+  location: China · Guangzhou
+  image: /assets/img/sysu.jpg
   mark: MSc
 
-- institution: Previous University
-  school: School of Computer Science
-  degree: B.Eng. in Artificial Intelligence
-  detail: Coursework in machine learning, robotics, and software systems.
-  period: 2021 — 2025
-  location: China
+- institution: Xidian University
+  school: School of Artificial Intelligence
+  degree: BEng in Artificial Intelligence
+  detail: GPA 3.9/4.0 (Top 3%)
+  period: Sep. 2021 — Jun. 2025
+  location: China · Xi'an
+  image: /assets/img/xidian.jpg
   mark: BEng
-
