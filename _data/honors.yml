@@ -12,7 +12,7 @@
 
 - featured: true
   year: "2025"
-  title: Soong Ching Ling Future Scholarship
+  title: Huameng Scholarship
   issuer: Ministry of Education of the People's Republic of China
   image: assets\img\award\p5.jpg
 
@@ -21,6 +21,11 @@
   title: First Prize (Shaanxi Provincial Level)
   issuer: National Youth Science Popularization Innovation Experiment & Works Competition
   image: assets\img\award\p2.jpg
+
+- featured: false
+  year: "2025"
+  title: Second-Class Scholarship
+  issuer: Sun Yat-sen University
 
 - featured: false
   year: "2024"
