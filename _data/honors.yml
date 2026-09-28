@@ -1,17 +1,61 @@
-- year: "2026"
-  title: Outstanding Research Award
-  issuer: University Research Council
-  description: Placeholder for an academic or research distinction.
-  image: /assets/img/honor-research.svg
+- featured: true
+  year: "2024"
+  title: National Scholarship (国家奖学金)
+  issuer: Ministry of Education of the People's Republic of China
+  image: assets\img\award\p1.jpg
 
-- year: "2025"
-  title: First Prize · AI Innovation Challenge
-  issuer: National Student Technology Competition
-  description: Placeholder for a competition award or team achievement.
-  image: /assets/img/honor-innovation.svg
+- featured: true
+  year: "2024"
+  title: Meritorious Winner
+  issuer: Mathematical Contest in Modeling (MCM)
+  image: assets\img\award\p4.png
 
-- year: "2024"
-  title: Dean's Scholarship
-  issuer: School of Computer Science
-  description: Placeholder for a scholarship or academic recognition.
-  image: /assets/img/honor-scholarship.svg
+- featured: true
+  year: "2025"
+  title: Soong Ching Ling Future Scholarship
+  issuer: Ministry of Education of the People's Republic of China
+  image: assets\img\award\p5.jpg
+
+- featured: true
+  year: "2024"
+  title: First Prize (Shaanxi Provincial Level)
+  issuer: National Youth Science Popularization Innovation Experiment & Works Competition
+  image: assets\img\award\p2.jpg
+
+- featured: false
+  year: "2024"
+  title: Bronze Award (Shaanxi Provincial Level)
+  issuer: China International College Students’ Innovation Competition
+
+- featured: false
+  year: "2024"
+  title: Silver Award (Xidian University Level)
+  issuer: China International College Students’ Innovation Competition
+
+- featured: false
+  year: "2024"
+  title: Bronze Award (Xidian University Level)
+  issuer: China International College Students’ Innovation Competition
+
+- featured: false
+  year: "2024"
+  title: Outstanding Student Model
+  issuer: Xidian University
+
+- featured: false
+  year: "2023"
+  title: Outstanding Student
+  issuer: Xidian University
+
+- featured: false
+  year: "2023"
+  title: First-Class Scholarship
+  issuer: Xidian University
+
+- featured: false
+  year: "2023"
+  title: Second Prize (Shaanxi Provincial Level)
+  issuer: National College Students Mathematical Competition
+
+
+

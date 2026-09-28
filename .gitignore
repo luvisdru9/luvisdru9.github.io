@@ -5,3 +5,7 @@ Gemfile.lock
 .DS_Store
 .jekyll-cache
 git-update.sh
+
+# Local source videos; publish only the optimized web copy.
+assets/videos/RLMMFlow.mp4
+assets/videos/redpandacompress_RLMMFlow.mp4

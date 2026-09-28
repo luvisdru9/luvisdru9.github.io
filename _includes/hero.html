@@ -3,10 +3,9 @@
   <div class="page-shell hero-grid">
     <div class="hero-copy">
       <div class="hero-name reveal"><h1>{{ site.title }}</h1>{% if site.title_zh %}<span>({{ site.title_zh }})</span>{% endif %}</div>
-      <div class="hero-identity reveal delay-1">
-        <p class="hero-role"><span class="hero-position">{{ site.position }}</span><span class="hero-field">{{ site.field }}</span></p>
-      </div>
-      <p class="hero-intro reveal delay-2">{{ site.intro }}</p>
+      {% assign current_education = site.data.education | first %}
+      {% capture current_institution_link %}<a href="{{ current_education.link }}" target="_blank" rel="noopener">{{ current_education.institution }}</a>{% endcapture %}
+      <p class="hero-intro reveal delay-2">{{ site.intro | replace: current_education.institution, current_institution_link }}</p>
       <div class="focus-line reveal delay-2" aria-label="Research areas">
         <span>Embodied AI</span><i aria-hidden="true"></i><span>Large Language Model</span>
       </div>

@@ -1,4 +1,28 @@
 <section class="section" id="honors"><div class="page-shell">
   <div class="section-heading reveal"><h2>Honors</h2></div>
-  <div class="honor-list">{% for item in site.data.honors %}<article class="honor-item reveal"><div class="honor-image"><img src="{{ item.image | relative_url }}" alt="{{ item.title }}" loading="lazy"></div><div class="honor-main"><h3>{{ item.title }}</h3><p>{{ item.issuer }}</p>{% if item.description %}<span>{{ item.description }}</span>{% endif %}</div><time>{{ item.year }}</time></article>{% endfor %}</div>
+
+  {% assign featured_honors = site.data.honors | where: "featured", true %}
+  <div class="honor-featured-grid">
+    {% for item in featured_honors %}
+    <article class="honor-featured-card reveal">
+      <div class="honor-featured-image"><img src="{{ item.image | relative_url }}" alt="{{ item.title }} certificate" loading="lazy"></div>
+      <div class="honor-featured-copy">
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.issuer }}</p>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% assign other_honors = site.data.honors | where: "featured", false %}
+  {% if other_honors.size > 0 %}
+  <div class="honor-list reveal">
+    {% for item in other_honors %}
+    <article class="honor-row">
+      <time datetime="{{ item.year }}">{{ item.year }}</time>
+      <p>{{ item.title }}{% if item.issuer %}<span>, {{ item.issuer }}</span>{% endif %}</p>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div></section>
