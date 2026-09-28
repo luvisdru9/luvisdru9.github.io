@@ -9,7 +9,7 @@
   status: Under Review
   image: /assets/img/DHRCL.png
   paper_link: https://arxiv.org/abs/2607.26457
-  video_link:
+  project_page_link: https://wshtm.github.io/DHRCL/
 
 - title: "RLMM-Flow: A Flow-based Mobile Manipulation Framework with Latent-Space Reinforcement Learning"
   authors:
@@ -23,4 +23,4 @@
   status: Preprint
   image: /assets/img/RLMM.png
   paper_link: https://arxiv.org/abs/2607.26460
-  # video_link: /assets/videos/RLMMFlow-web.mp4
+  project_page_link: https://wshtm.github.io/RLMM-Flow/
