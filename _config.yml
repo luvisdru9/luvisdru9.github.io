@@ -15,6 +15,7 @@ intro: M.S. Student, School of Computer Science and Engineering, Sun Yat-sen Uni
 keywords: Embodied AI, Robot Learning, Large Language Models, NLP
 description: Personal homepage of Ziming Li — publications, selected projects, honors, and technical notes.
 canonical: https://luvisdru9.github.io/
+allow_search_indexing: false
 
 # Links
 google_scholar: https://scholar.google.com/citations?user=G7RUWTEAAAAJ&hl=zh-CN

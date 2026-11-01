@@ -3,6 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    {% unless site.allow_search_indexing %}
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="googlebot" content="noindex, nofollow, noarchive">
+    {% endunless %}
     <meta name="theme-color" content="#f6f7fb">
     <title>{{ site.title }}{% if site.title_zh %} ({{ site.title_zh }}){% endif %}</title>
     <meta name="description" content="{{ site.description }}">

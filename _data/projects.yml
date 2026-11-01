@@ -1,20 +1,20 @@
-# - title: Embodied Agent Playground
-#   type: Research prototype · Placeholder
-#   description: A modular sandbox for testing perception, planning, and action policies in interactive environments.
-#   tags: [Python, Robotics, VLA]
-#   icon: fa-solid fa-cubes
-#   theme: violet
-#   link: /MyBlog/
-#   link_label: Read related notes
+- title: SQL-Reasoner-CN
+  type: Personal Project
+  description: A Chinese Text-to-SQL Tool Post-Trained with Verifiable Rewards.
+  tags: [LLM, Text-to-SQL, Reinforcement Learning]
+  icon: fa-solid fa-cubes
+  theme: violet
+  link: https://github.com/luvisdru9/SQL-Reasoner-CN
+  link_label: Code
 
-# - title: LLM Architecture Notes
-#   type: Knowledge project
-#   description: Structured technical notes covering transformers, adaptation, alignment, and modern model systems.
-#   tags: [LLM, NLP, Research]
-#   icon: fa-solid fa-book-open
-#   theme: blue
-#   link: /MyBlog/
-#   link_label: Open the blog
+- title: DeepResearch Agent
+  type: Personal Project
+  description: A Evidence-Driven Multi-Agent Deep Research System.
+  tags: [LLM, Agent, DeepResearch]
+  icon: fa-solid fa-book-open
+  theme: blue
+  link: https://github.com/luvisdru9/DeepResearchAgent
+  link_label: Code
 
 # - title: Efficient Model Toolkit
 #   type: Engineering concept · Placeholder
