@@ -2,25 +2,25 @@
   year: "2024"
   title: National Scholarship (国家奖学金)
   issuer: Ministry of Education of the People's Republic of China
-  image: assets\img\award\p1.jpg
+  image: /assets/img/award/p1.jpg
 
 - featured: true
   year: "2024"
   title: Meritorious Winner
   issuer: Mathematical Contest in Modeling (MCM)
-  image: assets\img\award\p4.png
+  image: /assets/img/award/p4.png
 
 - featured: true
   year: "2025"
   title: Huameng Scholarship
   issuer: Shenzhen TCL Foundation
-  image: assets\img\award\p5.jpg
+  image: /assets/img/award/p5.jpg
 
 - featured: true
   year: "2024"
   title: First Prize (Shaanxi Provincial Level)
   issuer: National Youth Science Popularization Innovation Experiment & Works Competition
-  image: assets\img\award\p2.jpg
+  image: /assets/img/award/p2.jpg
 
 - featured: false
   year: "2025"
